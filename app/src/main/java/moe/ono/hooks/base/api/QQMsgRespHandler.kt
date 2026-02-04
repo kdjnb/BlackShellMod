@@ -140,7 +140,7 @@ class QQMsgRespHandler : ApiHookItem() {
                                     "      \"3\": 8,\n" +
                                     "      \"4\": 0,\n" +
                                     "      \"5\": 0,\n" +
-                                    "      \"6\": $msgtime,\n" +
+                                    "      \"6\": 2,\n" +
                                     "      \"12\": 0" +
                                     "    },\n" +
                                     "    \"3\": {\n" +
@@ -150,7 +150,7 @@ class QQMsgRespHandler : ApiHookItem() {
                                     "      \"2\": {\n" +
                                     "        \"1\": {\n" +
                                     "          \"1\": \"$toPeerid\",\n" +
-                                    "          \"2\": $msgtime,\n" +
+                                    "          \"2\": 2,\n" +
                                     "          \"20\": 0,\n" +
                                     "          \"21\": 0,\n" +
                                     "          \"9\": 0,\n" +
@@ -177,7 +177,7 @@ class QQMsgRespHandler : ApiHookItem() {
                                     "      \"3\": 11,\n" +
                                     "      \"4\": 0,\n" +
                                     "      \"5\": ${pbSendCount},\n" +
-                                    "      \"6\": $msgtime,\n" +
+                                    "      \"6\": 9178,\n" +  //测试seq
                                     "      \"7\": 1,\n" +
                                     "      \"11\": $seq,\n" +
                                     "      \"28\": ${pbSendCount},\n" +
@@ -188,7 +188,7 @@ class QQMsgRespHandler : ApiHookItem() {
                                     "      \"1\": {\n" +
                                     "        \"1\": {\n" +
                                     "          \"1\": 0,\n" +
-                                    "          \"2\": $msgtime,\n" +
+                                    "          \"2\": 1,\n" +  //测试
                                     "          \"3\": 1490340800,\n" +
                                     "          \"4\": 0,\n" +
                                     "          \"5\": 10,\n" +

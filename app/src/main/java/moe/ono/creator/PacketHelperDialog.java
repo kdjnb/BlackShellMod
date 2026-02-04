@@ -421,9 +421,9 @@ public class PacketHelperDialog extends BottomPopupView {
                                 "          \"1\": 82,\n" +
                                 "          \"2\": {},\n" +
                                 "          \"3\": {},\n" +
-                                "          \"4\": "+ThreadLocalRandom.current().nextInt(0, 10000000)+",\n" +
-                                "          \"5\": "+ThreadLocalRandom.current().nextInt(0, 100000)+",\n" +
-                                "          \"6\": "+ThreadLocalRandom.current().nextInt(0, 10000000)+",\n" +
+                                "          \"4\": "+666666+",\n" +
+                                "          \"5\": "+9178+",\n" +
+                                "          \"6\": "+666666+",\n" +
                                 "          \"7\": 1,\n" +
                                 "          \"8\": 0,\n" +
                                 "          \"9\": 0,\n" +

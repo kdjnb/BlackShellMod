@@ -92,8 +92,8 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
 
                                     if (!foundONO(parent)) {
                                         val onoImageView = ImageView(parent.context)
-                                        onoImageView.setImageResource(R.drawable.ic_ouo1)
-                                        onoImageView.contentDescription = "ONO"
+                                        onoImageView.setImageResource(R.drawable.ic_ouo)
+                                        onoImageView.contentDescription = "BSM"
 
                                         val layoutParams = LinearLayout.LayoutParams(0, (28.0f * parent.resources.displayMetrics.density + 0.5f).toInt())
                                         layoutParams.weight = 1.0f
@@ -305,6 +305,7 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                     "打开 Scheme 链接" -> {
                         SyncUtils.runOnUiThread { JumpSchemeUriDialog.createView(view.context) }
                     }
+
                 }
             }
             .show()

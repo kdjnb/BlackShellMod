@@ -12,4 +12,5 @@
     <item name="item_message_encryptor" type="id" />
     <item name="item_protocol_recall" type="id" />
     <item name="item_link_repeater" type="id" />
+    <item name="item_super_qq_show_convert" type="id" />
 </resources>
