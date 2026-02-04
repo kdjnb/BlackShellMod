@@ -1,11 +1,12 @@
 <div align="center">
-    <h1> OUO </h1>
+    <h1> BlackShell Mod </h1>
+    <h2> 一群嘿壳 </h2>
 
-[![Telegram](https://img.shields.io/static/v1?label=Telegram&message=Channel&color=0088cc)](https://t.me/ouom_pub)
-[![Telegram](https://img.shields.io/static/v1?label=Telegram&message=CI&color=0088cc)](https://t.me/ono_ci)
-[![Telegram](https://img.shields.io/static/v1?label=Telegram&message=Chat&color=0088cc)](https://t.me/ouom_chat)
+[![Telegram](https://img.shields.io/static/v1?label=Telegram&message=Channel&color=0088cc)](https://t.me/bsmodx)
 
-QQ, Now with Superpowers
+[![Telegram](https://img.shields.io/static/v1?label=Telegram&message=Chat&color=0088cc)](https://t.me/bsmodchat)
+
+The Ultimate QQ Mod
 </div>
 
 > [!WARNING]  
@@ -14,7 +15,7 @@ QQ, Now with Superpowers
 -------
 
 # How To Use / 说明
-在`Xposed 框架`中激活本模块后，在 QQ 自带设置中点击 `ONO` 即可进入设置页面
+在`Xposed 框架`中激活本模块后，在 QQ 自带设置中点击 `BlackShell Mod` 即可进入设置页面
 
 - Android >= `10.0`
 - QQ >= `9.0.71` （仅适配 QQNT，短期内不会适配 TIM）
@@ -78,7 +79,7 @@ QQ, Now with Superpowers
 
 # Support / 赞助
 
-### 请直接联系 [@ouom_bot](https://t.me/ouom_bot)
+### 请直接联系 [@bsmodxbot](https://t.me/bsmodxbot)
 
 - 开发者目前是学生，主要经济来源来自家庭支持，但业余活动仍需一定支出。您可以自由选择是否捐助。
 - 赞助完全自愿，赞助者不会获得任何特权，且不赞助的用户依然可以使用所有功能。
