@@ -92,9 +92,21 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:text="预设"
-                android:layout_weight="2"
+                android:layout_weight="1"
                 app:cornerRadius="25dp"
                 android:backgroundTint="#1976D2"
+                android:textColor="@color/white"
+                />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_multi_forward"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="多消息转发"
+                android:layout_weight="1"
+                app:cornerRadius="25dp"
+                android:backgroundTint="#FF9800"
                 android:textColor="@color/white"
                 />
 

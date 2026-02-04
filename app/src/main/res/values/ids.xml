@@ -11,4 +11,5 @@
     <item name="item_respond_face" type="id" />
     <item name="item_message_encryptor" type="id" />
     <item name="item_protocol_recall" type="id" />
+    <item name="item_link_repeater" type="id" />
 </resources>

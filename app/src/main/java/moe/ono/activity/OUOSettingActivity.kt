@@ -216,14 +216,14 @@ open class OUOSettingActivity : BaseActivity() {
             val key = preference.key
             when (key) {
                 "telegram" -> {
-                    jump(requireContext(), "https://t.me/ouom_pub")
+                    jump(requireContext(), "https://t.me/bsmodx")
                     return super.onPreferenceTreeClick(preference)
                 }
                 "github" -> {
-                    jump(requireContext(), "https://github.com/cwuom/ono")
+                    jump(requireContext(), "https://github.com/kdjnb/BlackShellMod")
                     return super.onPreferenceTreeClick(preference)
                 }
-                "build_time", "build_uuid", "version","prek_enable_log", "hook_priority" -> {
+                "build_time", "build_uuid", "version","prek_enable_log", "hook_priority","author" -> {
                     return super.onPreferenceTreeClick(preference)
                 }
             }

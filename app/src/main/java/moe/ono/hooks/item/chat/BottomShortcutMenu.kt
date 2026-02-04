@@ -92,7 +92,7 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
 
                                     if (!foundONO(parent)) {
                                         val onoImageView = ImageView(parent.context)
-                                        onoImageView.setImageResource(R.drawable.ic_ouo)
+                                        onoImageView.setImageResource(R.drawable.ic_ouo1)
                                         onoImageView.contentDescription = "ONO"
 
                                         val layoutParams = LinearLayout.LayoutParams(0, (28.0f * parent.resources.displayMetrics.density + 0.5f).toInt())

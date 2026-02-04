@@ -36,6 +36,7 @@ import android.text.TextWatcher;
 import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
@@ -259,6 +260,10 @@ public class PacketHelperDialog extends BottomPopupView {
                 return true;
             });
 
+            // 获取多消息forward按钮并设置点击事件
+            Button btnMultiForward = findViewById(R.id.btn_multi_forward);
+            btnMultiForward.setOnClickListener(v -> showMultiForwardConfigDialog());
+
 
             final RadioButton[] rb = {findViewById(mRgSendType.getCheckedRadioButtonId())};
 
@@ -408,7 +413,7 @@ public class PacketHelperDialog extends BottomPopupView {
                                 "          \"7\": {},\n" +
                                 "          \"8\": {\n" +
                                 "            \"1\": 10001,\n" +
-                                "            \"4\": \"@ouom_pub\",\n" +
+                                "            \"4\": \"@bsmodx\",\n" +
                                 "            \"5\": 2\n" +
                                 "          }\n" +
                                 "        },\n" +
@@ -624,7 +629,7 @@ public class PacketHelperDialog extends BottomPopupView {
 
         builder.setCancelable(true);
 
-        AlertDialog dialog = builder.create();
+        android.app.AlertDialog dialog = builder.create();
         Objects.requireNonNull(dialog.getWindow()).setLayout(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -837,6 +842,21 @@ public class PacketHelperDialog extends BottomPopupView {
                 }
             }
         }, interval);
+    }
+
+    // 消息项数据结构
+    public static class ForwardMessageItem {
+        public String uin;
+        public String content;
+        public long timestamp;
+        public String nickname;
+
+        public ForwardMessageItem(String uin, String content, long timestamp, String nickname) {
+            this.uin = uin;
+            this.content = content;
+            this.timestamp = timestamp;
+            this.nickname = nickname;
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -1140,6 +1160,292 @@ public class PacketHelperDialog extends BottomPopupView {
     protected void beforeDismiss() {
         fadeOutAndClearBlur(decorView);
         super.beforeDismiss();
+    }
+
+    // 显示多消息forward配置对话框
+    @SuppressLint("SetTextI18n")
+    private void showMultiForwardConfigDialog() {
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getContext());
+        builder.setTitle("多消息转发配置");
+
+        LinearLayout layout = new LinearLayout(getContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(48, 24, 48, 24);
+
+        // 添加消息列表的RecyclerView
+        RecyclerView recyclerView = new RecyclerView(getContext());
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        // 初始化消息列表
+        List<ForwardMessageItem> messageList = new ArrayList<>();
+        ForwardMessageItemAdapter adapter = new ForwardMessageItemAdapter(messageList, this);
+        recyclerView.setAdapter(adapter);
+
+        // 添加按钮
+        Button addMessageBtn = new Button(getContext());
+        addMessageBtn.setText("添加消息");
+        addMessageBtn.setBackgroundColor(Color.parseColor("#2196F3"));
+        addMessageBtn.setTextColor(Color.WHITE);
+        addMessageBtn.setOnClickListener(v -> {
+            showAddMessageDialog(messageList, adapter);
+        });
+
+        layout.addView(recyclerView);
+        layout.addView(addMessageBtn);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("发送", (dialog, which) -> {
+            if (messageList.isEmpty()) {
+                Toasts.error(getContext(), "请至少添加一条消息");
+                return;
+            }
+            sendMultiForwardMessage(messageList);
+        });
+
+        builder.setNegativeButton("取消", (dialog, which) -> dialog.cancel());
+
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    // 显示添加消息对话框
+    private void showAddMessageDialog(List<ForwardMessageItem> messageList, ForwardMessageItemAdapter adapter) {
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getContext());
+        builder.setTitle("添加消息");
+
+        LinearLayout layout = new LinearLayout(getContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(24, 24, 24, 24);
+
+        EditText etUin = new EditText(getContext());
+        etUin.setHint("发送者UIN");
+        etUin.setText(AppRuntimeHelper.getAccount()); // 默认使用当前账号
+        layout.addView(etUin);
+
+        EditText etNickname = new EditText(getContext());
+        etNickname.setHint("发送者昵称");
+        layout.addView(etNickname);
+
+        EditText etContent = new EditText(getContext());
+        etContent.setHint("消息内容 (JSON格式的element)");
+        etContent.setLines(3);
+        etContent.setMinLines(3);
+        etContent.setMaxLines(6);
+        etContent.setVerticalScrollBarEnabled(true);
+        etContent.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
+        etContent.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        layout.addView(etContent);
+
+        EditText etTimestamp = new EditText(getContext());
+        etTimestamp.setHint("时间戳 (Unix格式，留空使用当前时间)");
+        long currentTime = System.currentTimeMillis() / 1000;
+        etTimestamp.setText(String.valueOf(currentTime));
+        layout.addView(etTimestamp);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("添加", (dialog, which) -> {
+            String uin = etUin.getText().toString().trim();
+            String nickname = etNickname.getText().toString().trim();
+            String content = etContent.getText().toString().trim();
+            String timestampStr = etTimestamp.getText().toString().trim();
+
+            if (uin.isEmpty() || content.isEmpty()) {
+                Toasts.error(getContext(), "UIN和内容不能为空");
+                return;
+            }
+
+            long timestamp = currentTime;
+            if (!timestampStr.isEmpty()) {
+                try {
+                    timestamp = Long.parseLong(timestampStr);
+                } catch (NumberFormatException e) {
+                    Toasts.error(getContext(), "时间戳格式错误");
+                    return;
+                }
+            }
+
+            if (nickname.isEmpty()) {
+                nickname = "未知用户";
+            }
+
+            ForwardMessageItem item = new ForwardMessageItem(uin, content, timestamp, nickname);
+            messageList.add(item);
+            adapter.notifyDataSetChanged();
+        });
+
+        builder.setNegativeButton("取消", (dialog, which) -> dialog.cancel());
+        builder.show();
+    }
+
+    // 发送多消息forward
+    @SuppressLint("SimpleDateFormat")
+    private void sendMultiForwardMessage(List<ForwardMessageItem> messageList) {
+        try {
+            StringBuilder dataBuilder = new StringBuilder();
+            dataBuilder.append("{\"2\": {\n");
+            dataBuilder.append("  \"1\": \"MultiMsg\",\n");
+            dataBuilder.append("  \"2\": {\n");
+            dataBuilder.append("    \"1\": [\n");
+
+            for (int i = 0; i < messageList.size(); i++) {
+                ForwardMessageItem item = messageList.get(i);
+
+                dataBuilder.append("      {\n");
+                dataBuilder.append("        \"1\": {\n");
+                dataBuilder.append("          \"1\": ").append(item.uin).append(",\n");
+                dataBuilder.append("          \"5\": {},\n");
+                dataBuilder.append("          \"6\": {},\n");
+                dataBuilder.append("          \"7\": {},\n");
+                dataBuilder.append("          \"8\": {\n");
+                dataBuilder.append("            \"1\": 10001,\n");
+                dataBuilder.append("            \"4\": \"").append(item.nickname).append("\",\n");
+                dataBuilder.append("            \"5\": 2\n");
+                dataBuilder.append("          }\n");
+                dataBuilder.append("        },\n");
+                dataBuilder.append("        \"2\": {\n");
+                dataBuilder.append("          \"1\": 82,\n");
+                dataBuilder.append("          \"2\": {},\n");
+                dataBuilder.append("          \"3\": {},\n");
+                dataBuilder.append("          \"4\": ").append(ThreadLocalRandom.current().nextInt(0, 10000000)).append(",\n");
+                dataBuilder.append("          \"5\": ").append(item.timestamp).append(",\n");  // 使用指定时间戳
+                dataBuilder.append("          \"6\": ").append(ThreadLocalRandom.current().nextInt(0, 10000000)).append(",\n");
+                dataBuilder.append("          \"7\": 1,\n");
+                dataBuilder.append("          \"8\": 0,\n");
+                dataBuilder.append("          \"9\": 0,\n");
+                dataBuilder.append("          \"15\": {\n");
+                dataBuilder.append("            \"1\": 0,\n");
+                dataBuilder.append("            \"2\": 0,\n");
+                dataBuilder.append("            \"3\": 0,\n");
+                dataBuilder.append("            \"4\": \"\",\n");
+                dataBuilder.append("            \"5\": \"\"\n");
+                dataBuilder.append("          }\n");
+                dataBuilder.append("        },\n");
+                dataBuilder.append("        \"3\": {\n");
+                dataBuilder.append("          \"1\": {\n");
+                dataBuilder.append("            \"2\": ").append(item.content).append("\n");
+                dataBuilder.append("          }\n");
+                dataBuilder.append("        }\n");
+
+                if (i < messageList.size() - 1) {
+                    dataBuilder.append("      },\n");
+                } else {
+                    dataBuilder.append("      }\n");
+                }
+            }
+
+            dataBuilder.append("    ]\n");
+            dataBuilder.append("  }\n");
+            dataBuilder.append("}}");
+
+            String data = dataBuilder.toString();
+            Logger.d("MultiForwardData", data);
+
+            byte[] protoBytes = QPacketHelperKt.buildMessage(data);
+            byte[] compressedData = compressData(protoBytes);
+
+            long target = Long.parseLong(chatType == GROUP ? peer : getUinFromUid(peer));
+
+            String json = "{\n" +
+                    "  \"2\": {\n" +
+                    "    \"1\": " + (chatType == C2C ? 1 : 3) + ",\n" +
+                    "    \"2\": {\n" +
+                    "      \"2\": " + target + "\n" +
+                    "    },\n" +
+                    "    \"4\": \"hex->" + bytesToHex(compressedData) + "\"\n" +
+                    "  },\n" +
+                    "  \"15\": {\n" +
+                    "    \"1\": 4,\n" +
+                    "    \"2\": 2,\n" +
+                    "    \"3\": 9,\n" +
+                    "    \"4\": 0\n" +
+                    "  }\n" +
+                    "}".trim();
+
+            Logger.d("ElementSender-send-by-multi-forward", json);
+            QPacketHelperKt.sendPacket("trpc.group.long_msg_interface.MsgService.SsoSendLongMsg", json);
+
+            Toasts.success(getContext(), "多消息转发发送成功");
+        } catch (Exception e) {
+            Logger.e("MultiForwardError", e);
+            Toasts.error(getContext(), "发送失败: " + e.getMessage());
+        }
+    }
+
+    // RecyclerView适配器类
+    public static class ForwardMessageItemAdapter extends RecyclerView.Adapter<ForwardMessageItemAdapter.ViewHolder> {
+        private List<ForwardMessageItem> messageList;
+        private PacketHelperDialog dialog;
+
+        public ForwardMessageItemAdapter(List<ForwardMessageItem> messageList, PacketHelperDialog dialog) {
+            this.messageList = messageList;
+            this.dialog = dialog;
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            TextView textView = new TextView(parent.getContext());
+            textView.setPadding(24, 16, 24, 16);
+            textView.setTextSize(14);
+            textView.setMaxLines(2);
+            textView.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            textView.setBackgroundColor(Color.parseColor("#1F000000")); // 浅灰色背景
+            textView.setLayoutParams(new RecyclerView.LayoutParams(
+                RecyclerView.LayoutParams.MATCH_PARENT,
+                RecyclerView.LayoutParams.WRAP_CONTENT
+            ));
+            return new ViewHolder(textView, this);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            ForwardMessageItem item = messageList.get(position);
+            String displayText = "[" + item.uin + "] " + item.nickname + " (" + new SimpleDateFormat("MM-dd HH:mm").format(new Date(item.timestamp * 1000)) + "): " + item.content.substring(0, Math.min(30, item.content.length()));
+            if (item.content.length() > 30) {
+                displayText += "...";
+            }
+            holder.textView.setText(displayText);
+        }
+
+        @Override
+        public int getItemCount() {
+            return messageList.size();
+        }
+
+        public void removeItem(int position) {
+            messageList.remove(position);
+            notifyItemRemoved(position);
+        }
+
+        public static class ViewHolder extends RecyclerView.ViewHolder {
+            TextView textView;
+            ForwardMessageItemAdapter adapter;
+
+            public ViewHolder(@NonNull TextView textView, ForwardMessageItemAdapter adapter) {
+                super(textView);
+                this.textView = textView;
+                this.adapter = adapter;
+
+                // 设置长按事件以删除消息
+                textView.setOnLongClickListener(v -> {
+                    Context context = textView.getContext();
+                    MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
+                    builder.setTitle("删除消息");
+                    builder.setMessage("确定要删除这条消息吗？");
+                    builder.setPositiveButton("确定", (dialog, which) -> {
+                        int position = getAdapterPosition();
+                        if (position != RecyclerView.NO_POSITION) {
+                            adapter.removeItem(position);
+                        }
+                    });
+                    builder.setNegativeButton("取消", (dialog, which) -> dialog.cancel());
+                    builder.show();
+                    return true;
+                });
+            }
+        }
     }
 
     @Override

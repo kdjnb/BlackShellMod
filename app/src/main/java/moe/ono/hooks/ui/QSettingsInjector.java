@@ -165,11 +165,11 @@ public class QSettingsInjector extends ApiHookItem {
             Object entryItem;
             if (ctorArgCount == 5) {
                 entryItem = ctorSimpleItemProcessor.newInstance(
-                        ctx, R.id.OnO_settingEntryItem, "ONO", resId, null
+                        ctx, R.id.OnO_settingEntryItem, "BlackShell Mod", resId, null
                 );
             } else {
                 entryItem = ctorSimpleItemProcessor.newInstance(
-                        ctx, R.id.OnO_settingEntryItem, "ONO", resId
+                        ctx, R.id.OnO_settingEntryItem, "BlackShell Mod", resId
                 );
             }
 

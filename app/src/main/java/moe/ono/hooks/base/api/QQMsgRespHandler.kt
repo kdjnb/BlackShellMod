@@ -429,7 +429,7 @@ class QQMsgRespHandler : ApiHookItem() {
                                         "      ],\n" +
                                         "      \"resid\": \"$resid\",\n" +
                                         "      \"source\": \"聊天记录\",\n" +
-                                        "      \"summary\": \"PacketHelper@ouom_pub\",\n" +
+                                        "      \"summary\": \"PacketHelper@bsmodx\",\n" +
                                         "      \"uniseq\": \"${UUID.randomUUID()}\"\n" +
                                         "    }\n" +
                                         "  },\n" +

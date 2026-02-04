@@ -157,7 +157,7 @@ android.applicationVariants.all {
         if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
             val config = project.android.defaultConfig
             val versionName = config.versionName
-            this.outputFileName = "ONO-RELEASE-${versionName}.apk"
+            this.outputFileName = "BlackShell-RELEASE-${versionName}.apk"
         }
     }
 }

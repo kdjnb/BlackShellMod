@@ -7,24 +7,24 @@ import moe.ono.hooks.item.chat.MessageEncryptor
 import moe.ono.hooks.item.chat.FakeFileRecall
 import moe.ono.hooks.item.chat.StickerPanelEntry
 import moe.ono.hooks.item.developer.QQMessageFetcher
+import moe.ono.hooks.item.entertainment.LinkRepeater
 import moe.ono.hooks.item.entertainment.ModifyTextMessage
 import moe.ono.hooks.item.entertainment.RespondFace
-import moe.ono.hooks.item.sigma.QQMessageTracker
-import moe.ono.util.Logger
+import moe.ono.hooks.item.sigma.QQMessageTrackerimport moe.ono.util.Logger
 import java.lang.reflect.Modifier
 
 @HookItem(path = "API/对应类型消息菜单构建时回调接口")
 class MenuBuilderHook : ApiHookItem() {
-    private val decorators: Array<OnMenuBuilder> = arrayOf(
-        StickerPanelEntry(),
-        QQMessageTracker(),
-        QQMessageFetcher(),
-        ModifyTextMessage(),
-        RespondFace(),
-        MessageEncryptor(),
-        FakeFileRecall(),
-    )
-
+        private val decorators: Array<OnMenuBuilder> = arrayOf(
+            StickerPanelEntry(),
+            QQMessageTracker(),
+            QQMessageFetcher(),
+            ModifyTextMessage(),
+            RespondFace(),
+            LinkRepeater(),
+            MessageEncryptor(),
+            FakeFileRecall(),
+        )
     override fun entry(classLoader: ClassLoader) {
         val baseClass = classLoader.loadClass("com.tencent.mobileqq.aio.msglist.holder.component.BaseContentComponent")
         val getMsgMethodName = baseClass.declaredMethods.first {

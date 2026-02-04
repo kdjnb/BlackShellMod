@@ -174,10 +174,10 @@ class MainActivity : AppCompatTransferActivity() {
         val id = view.id
         when (id) {
             R.id.cv_ouompub -> {
-                jump(this, "https://t.me/ouom_pub")
+                jump(this, "https://t.me/bsmodx")
             }
             R.id.cv_github -> {
-                jump(this, "https://github.com/cwuom/ono")
+                jump(this, "https://github.com/kdjnb/BlackShellMod")
             }
         }
     }

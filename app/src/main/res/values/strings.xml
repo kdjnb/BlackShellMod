@@ -1,15 +1,15 @@
 <resources>
     <string name="resources_inject_state">Resources injection success</string>
-    <string name="app_name">ovo</string>
-    <string name="packethelper">PacketHelper</string>
+    <string name="app_name">BlackShell Mod</string>
+    <string name="packethelper">嘿壳的PacketHelper</string>
     <string name="title_activity_stub">StubActivity</string>
-    <string name="ouom_pub">\@ouom_pub</string>
-    <string name="xposeddescription">QQ, Now with Superpowers\nBy cwuom@github</string>
+    <string name="ouom_pub">\@bsmodx</string>
+    <string name="xposeddescription">The Ultimate QQ Mod\nBy kdjnb@github</string>
     <string name="fake_file">Fake File</string>
-    <string name="ono_need_find_method">ONO需要寻找被混淆的方法</string>
-    <string name="click_to_find_method">查找</string>
+    <string name="ono_need_find_method">BlackShell Mod需要寻找被混淆的方法</string>
+    <string name="click_to_find_method">彳亍！扌戈！</string>
     <string name="github">GitHub</string>
-    <string name="cwuom_ono">cwuom/ono</string>
+    <string name="cwuom_ono">kdjnb/BlackShellMod</string>
     <string name="title_activity_ouosetting_step2">OUOSettingActivityStep2</string>
     <string name="qq_message_tracker">Message Tracker</string>
     <string name="get_channel_ark">Get Channel Ark</string>

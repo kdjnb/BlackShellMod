@@ -78,6 +78,10 @@
             android:title="版本"
             app:key="version"
             app:summary="N/A" />
+        <Preference
+            android:title="我去不早说"
+            app:key="author"
+            app:summary="By LIQ" />
 
         <Preference
             android:title="编译时间"
@@ -96,6 +100,6 @@
         <Preference
             app:key="telegram"
             app:icon="@drawable/ic_telegram"
-            app:summary="Telegram: @ouom_pub" />
+            app:summary="Telegram: @bsmodx" />
     </PreferenceCategory>
 </PreferenceScreen>
