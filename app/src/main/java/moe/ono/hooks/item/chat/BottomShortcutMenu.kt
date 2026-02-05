@@ -188,9 +188,7 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         }
         items.add("发白字")
         items.add("发送位置卡片")
-        if (getItem(FakeLocationShare::class.java).isEnabled) {
-            items.add("发假位置共享")
-        }
+        items.add("发假位置共享")
         if (getChannelArk) {
             items.add("GetChannelArk")
         }

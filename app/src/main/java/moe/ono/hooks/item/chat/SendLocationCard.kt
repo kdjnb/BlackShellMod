@@ -71,18 +71,18 @@ class SendLocationCard : BaseClickableFunctionHookItem(), IShortcutMenu {
     "from": 1,
     "meta": {
         "Location.Search": {
-            "address": "$title",
+            "address": "$desc",
             "enum_relation_type": 1,
             "from": "plusPanel",
             "from_account": 1211556192,
             "id": "",
             "lat": "39.018193",
             "lng": "125.800029",
-            "name": "$desc",
+            "name": "$title",
             "uint64_peer_account": 184796527
         }
     },
-    "prompt": "[位置]$title",
+    "prompt": "[位置]$desc",
     "ver": "1.1.2.21",
     "view": "LocationShare"
 }"""
