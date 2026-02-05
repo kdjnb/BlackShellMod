@@ -82,7 +82,7 @@ class SendLocationCard : BaseClickableFunctionHookItem(), IShortcutMenu {
             "uint64_peer_account": 184796527
         }
     },
-    "prompt": "[位置]$desc",
+    "prompt": "[位置]$title",
     "ver": "1.1.2.21",
     "view": "LocationShare"
 }"""
