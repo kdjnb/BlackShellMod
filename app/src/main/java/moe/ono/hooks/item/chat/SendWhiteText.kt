@@ -35,7 +35,7 @@ class SendWhiteText : BaseClickableFunctionHookItem(), IShortcutMenu {
         XPopup.Builder(fixContext)
             .asInputConfirm(
                 "发送白字",
-                "请输入要发送的白字内容",
+                "请输入要发送的白字内容（对PC QQ无效且不保证所有人看都是白色）",
                 "",
                 object : OnInputConfirmListener {
                     override fun onConfirm(text: String?) {
