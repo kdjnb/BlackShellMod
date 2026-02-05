@@ -6,11 +6,13 @@ import moe.ono.hooks._core.annotation.HookItem
 import moe.ono.hooks.item.chat.MessageEncryptor
 import moe.ono.hooks.item.chat.FakeFileRecall
 import moe.ono.hooks.item.chat.StickerPanelEntry
+import moe.ono.hooks.item.chat.SuperQQShowConverter
 import moe.ono.hooks.item.developer.QQMessageFetcher
 import moe.ono.hooks.item.entertainment.LinkRepeater
 import moe.ono.hooks.item.entertainment.ModifyTextMessage
 import moe.ono.hooks.item.entertainment.RespondFace
-import moe.ono.hooks.item.sigma.QQMessageTrackerimport moe.ono.util.Logger
+import moe.ono.hooks.item.sigma.QQMessageTracker
+import moe.ono.util.Logger
 import java.lang.reflect.Modifier
 
 @HookItem(path = "API/对应类型消息菜单构建时回调接口")
@@ -24,6 +26,7 @@ class MenuBuilderHook : ApiHookItem() {
             LinkRepeater(),
             MessageEncryptor(),
             FakeFileRecall(),
+            SuperQQShowConverter(),
         )
     override fun entry(classLoader: ClassLoader) {
         val baseClass = classLoader.loadClass("com.tencent.mobileqq.aio.msglist.holder.component.BaseContentComponent")
@@ -37,13 +40,18 @@ class MenuBuilderHook : ApiHookItem() {
 //            Logger.d("target: $target")
             try {
                 hookAfter(classLoader.loadClass(target).getDeclaredMethod(getListMethodName)) { param ->
-                    val getMsgMethod = baseClass.getDeclaredMethod(getMsgMethodName).apply { isAccessible = true }
-                    val aioMsgItem = getMsgMethod.invoke(param.thisObject)!!
-                    Logger.d(aioMsgItem.toString())
-                    for (decorator in decorators) {
-                        if (target in decorator.targetTypes) {
-                            decorator.onGetMenu(aioMsgItem, target, param)
+                    try {
+                        val getMsgMethod = baseClass.getDeclaredMethod(getMsgMethodName).apply { isAccessible = true }
+                        val aioMsgItem = getMsgMethod.invoke(param.thisObject)!!
+                        Logger.d(aioMsgItem.toString())
+                        for (decorator in decorators) {
+                            if (target in decorator.targetTypes) {
+                                decorator.onGetMenu(aioMsgItem, target, param)
+                            }
                         }
+                    } catch (e: IllegalArgumentException) {
+                        // 某些组件类型可能不支持获取消息对象（如AIOSelectComponent）
+                        Logger.e("MenuBuilderHook", "不支持的消息组件类型: $target, 错误: ${e.message}")
                     }
                 }
             } catch (_: NoSuchMethodException) {
