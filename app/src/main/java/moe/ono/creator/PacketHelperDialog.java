@@ -154,6 +154,7 @@ public class PacketHelperDialog extends BottomPopupView {
 
 
         BasePopupView popupView = NewPop.asCustom(new PacketHelperDialog(fixContext));
+        setCurrentPopupView(popupView); // 保存弹窗实例引用
         popupView.show();
     }
 
@@ -745,6 +746,26 @@ public class PacketHelperDialog extends BottomPopupView {
         });
 
 
+    }
+    
+    // 设置发送类型为ARK模式
+    public static void setSendTypeToArk() {
+        SyncUtils.runOnUiThread(() -> {
+            try {
+                if (mRgSendType != null) {
+                    mRgSendType.check(R.id.rb_ark);
+                    if (editText != null) {
+                        editText.setHint("Json...");
+                    }
+                    // 隐藏发送方式选择，因为ARK消息不需要选择发送方式
+                    if (mRgSendBy != null) {
+                        mRgSendBy.setVisibility(GONE);
+                    }
+                }
+            } catch (Exception e) {
+                Logger.e(e);
+            }
+        });
     }
 
 
@@ -1462,6 +1483,133 @@ public class PacketHelperDialog extends BottomPopupView {
     @Override
     public Handler getHandler() {
         return handler;
+    }
+
+    // 自动发送方法，用于发白字功能
+    public static void performAutoSend() {
+        // 由于这是静态方法，我们无法直接访问实例变量
+        // 所以我们使用全局引用关闭对话框
+        SyncUtils.runOnUiThread(() -> {
+            if (editText == null) {
+                Logger.e("PacketHelperDialog", "editText is null, cannot perform auto send");
+                return;
+            }
+
+            // 获取当前的文本内容
+            String text = editText.getText().toString();
+            if (text.isEmpty()) {
+                Logger.e("PacketHelperDialog", "Text is empty, cannot send");
+                return;
+            }
+
+            try {
+                // 默认使用element类型
+                String send_type = "element";
+                
+                // ark类型
+                if (mRgSendType != null) {
+                    int checkedId = mRgSendType.getCheckedRadioButtonId();
+                    if (checkedId != -1) {
+                        RadioButton checkedRadioButton = mRgSendType.findViewById(checkedId);
+                        if (checkedRadioButton != null) {
+                            send_type = checkedRadioButton.getText().toString();
+                        }
+                    }
+                }
+
+                ContactCompat currentContact = getContact();
+                if (currentContact == null) {
+                    Logger.e("PacketHelperDialog", "Contact is null, cannot send");
+                    return;
+                }
+
+                // ark类型
+                if (send_type.equals("ark")) {
+                    try {
+                        send_ark_msg(text, currentContact);
+                    } catch (JSONException e) {
+                        Toasts.error(editText.getContext(), "JSON语法错误");
+                    }
+                    // 自动关闭对话框 - 使用XPopup的静态引用
+                    dismissCurrentPopup();
+                    return;
+                } else if (send_type.equals("text")) {
+                    send_text_msg(text, currentContact);
+                    // 自动关闭对话框 - 使用XPopup的静态引用
+                    dismissCurrentPopup();
+                    return;
+                } else if (send_type.equals("xml")) {
+                    try {
+                        String hex = Utils.bytesToHex(QQMsgRespHandler.Companion.compressData(text));
+                        String pb = "{\n" +
+                                "    \"12\": {\n" +
+                                "        \"1\": \"hex->" + hex + "\",\n" +
+                                "        \"2\": 35\n" +
+                                "    }\n" +
+                                "}";
+                        setContentForLongmsg(pb);
+                    } catch (Exception e) {
+                        Toasts.error(editText.getContext(), "发生错误");
+                        Logger.e(e);
+                    }
+                    // 自动关闭对话框 - 使用XPopup的静态引用
+                    dismissCurrentPopup();
+                    return;
+                }
+
+                // protobuf类型 - 使用直接发送
+                if (!isJSON(text)) {
+                    Toasts.info(editText.getContext(), "无效的代码");
+                    return;
+                }
+
+                int chat_type = getCurrentChatType();
+                if (chat_type != 1 && chat_type != 2) {
+                    Toasts.error(editText.getContext(), "失败");
+                    return;
+                }
+
+                // 直接发送
+                QPacketHelperKt.sendMessage(text, getCurrentPeerID(), chat_type == 2, send_type, false, "");
+                
+                Toasts.success(editText.getContext(), "请求成功");
+
+                // 自动关闭对话框 - 使用XPopup的静态引用
+                dismissCurrentPopup();
+            } catch (Exception e) {
+                Logger.e("未适配的消息结构", e);
+                MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(editText.getContext());
+                builder.setTitle("未适配的消息结构，请联系开发者");
+                builder.setMessage(e.toString());
+                builder.show();
+                Toasts.info(editText.getContext(), "未适配的消息结构，请联系开发者");
+            }
+        });
+    }
+    
+    // 添加一个静态变量来保存当前的弹窗实例
+    private static BasePopupView currentPopupView = null;
+    
+    // 提供一个方法来设置当前的弹窗实例
+    public static void setCurrentPopupView(BasePopupView popupView) {
+        currentPopupView = popupView;
+    }
+    
+    // 添加一个方法来关闭当前的弹窗
+    private static void dismissCurrentPopup() {
+        SyncUtils.runOnUiThread(() -> {
+            try {
+                // 使用保存的弹窗引用关闭当前弹窗
+                if (currentPopupView != null) {
+                    currentPopupView.dismiss();
+                    currentPopupView = null; // 清除引用
+                }
+                // 同时也执行模糊效果清理
+                fadeOutAndClearBlur(decorView);
+            } catch (Exception e) {
+                Logger.e("dismissCurrentPopup", e);
+            }
+        });
     }
 }
 

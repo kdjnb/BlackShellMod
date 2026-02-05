@@ -39,6 +39,8 @@ import moe.ono.hooks.item.developer.JumpSchemeUri
 import moe.ono.hooks.item.developer.QQHookCodec
 import moe.ono.hooks.item.developer.QQPacketHelperEntry
 import moe.ono.hooks.item.sigma.QQMessageTracker
+import moe.ono.hooks.item.chat.SendLocationCard
+import moe.ono.hooks.item.chat.SendWhiteText
 import moe.ono.loader.hookapi.IShortcutMenu
 import moe.ono.reflex.XMethod
 import moe.ono.ui.CommonContextWrapper
@@ -46,6 +48,8 @@ import moe.ono.util.Initiator
 import moe.ono.util.Logger
 import moe.ono.util.Session
 import moe.ono.util.SyncUtils
+
+import moe.ono.hooks._core.factory.HookItemFactory.getItem
 
 @SuppressLint("DiscouragedApi")
 @HookItem(
@@ -181,6 +185,8 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         if (getBknByCookie) {
             items.add("GetBknByCookie")
         }
+        items.add("发白字")
+        items.add("发送位置卡片")
         if (getChannelArk) {
             items.add("GetChannelArk")
         }
@@ -193,6 +199,11 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                 items.add(menu.menuName)
             }
         }
+
+//        // 添加发白字功能
+//        if (getItem(SendWhiteText::class.java).isEnabled) {
+//            items.add("发白字")
+//        }
 
         if (getItem(QQHookCodec::class.java).isEnabled) {
             if (!messageEncryptor) {
@@ -304,6 +315,20 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                     }
                     "打开 Scheme 链接" -> {
                         SyncUtils.runOnUiThread { JumpSchemeUriDialog.createView(view.context) }
+                    }
+                    "发白字" -> {
+                        // 调用发白字功能的处理方法
+                        val sendWhiteText = getItem(SendWhiteText::class.java)
+                        if (sendWhiteText is IShortcutMenu) {
+                            sendWhiteText.clickHandle(view.context)
+                        }
+                    }
+                    "发送位置卡片" -> {
+                        // 调用发送位置卡片功能的处理方法
+                        val sendLocationCard = getItem(SendLocationCard::class.java)
+                        if (sendLocationCard is IShortcutMenu) {
+                            sendLocationCard.clickHandle(view.context)
+                        }
                     }
 
                 }
