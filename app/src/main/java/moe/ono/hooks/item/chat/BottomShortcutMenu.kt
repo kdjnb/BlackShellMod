@@ -41,6 +41,7 @@ import moe.ono.hooks.item.developer.QQPacketHelperEntry
 import moe.ono.hooks.item.sigma.QQMessageTracker
 import moe.ono.hooks.item.chat.SendLocationCard
 import moe.ono.hooks.item.chat.SendWhiteText
+import moe.ono.hooks.item.chat.FakeLocationShare
 import moe.ono.loader.hookapi.IShortcutMenu
 import moe.ono.reflex.XMethod
 import moe.ono.ui.CommonContextWrapper
@@ -187,6 +188,9 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         }
         items.add("发白字")
         items.add("发送位置卡片")
+        if (getItem(FakeLocationShare::class.java).isEnabled) {
+            items.add("发假位置共享")
+        }
         if (getChannelArk) {
             items.add("GetChannelArk")
         }
@@ -328,6 +332,13 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                         val sendLocationCard = getItem(SendLocationCard::class.java)
                         if (sendLocationCard is IShortcutMenu) {
                             sendLocationCard.clickHandle(view.context)
+                        }
+                    }
+                    "发假位置共享" -> {
+                        // 调用发假位置共享功能的处理方法
+                        val fakeLocationShare = getItem(FakeLocationShare::class.java)
+                        if (fakeLocationShare is IShortcutMenu) {
+                            fakeLocationShare.clickHandle(view.context)
                         }
                     }
 
