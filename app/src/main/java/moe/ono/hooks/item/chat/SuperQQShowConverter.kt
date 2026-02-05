@@ -129,56 +129,117 @@ class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
     }
 
     /**
-     * Show input dialog to get face name from user
+     * Show dialog to ask user for expression type and then get face name
      */
     private fun showFaceNameInputDialog(context: Context, msgData: Map<*, *>?) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
         
+        // First, ask user to choose expression type
+        val options = arrayOf("超级QQ秀表情", "AI表情")
+        
         XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "转超级QQ秀表情",
-                "请输入表情名称",
-                "嘿壳表情", // 默认值
-                object : OnInputConfirmListener {
-                    override fun onConfirm(faceName: String?) {
-                        val finalFaceName = if (faceName.isNullOrEmpty()) "嘿壳表情" else faceName
-                        Logger.i("SuperQQShowConverter", "用户输入表情名称: $finalFaceName")
-                        writeDebugLog("用户输入表情名称: $finalFaceName")
-                        
-                        // Extract d1, d2, d3 from the original message if msgData is not null
-                        val d1 = if (msgData != null) extractD1FromMsg(msgData) else null
-                        val d2 = if (msgData != null) extractD2FromMsg(msgData) else null
-                        val d3 = if (msgData != null) extractD3FromMsg(msgData) else null
-                        
-                        Logger.i("SuperQQShowConverter", "提取到d1: $d1, d2: $d2, d3: $d3")
-                        writeDebugLog("提取到d1: $d1, d2: $d2, d3: $d3")
-                        
-                        if (d1 != null && d2 != null && d3 != null) {
-                            writeDebugLog("成功提取d1, d2, d3数据，准备构建模板")
-                            // Build the template JSON with extracted values
-                            val newJson = buildTemplateJson(d1, d2, d3, finalFaceName)
-                            
-                            // Call PacketHelper to fill in the JSON and send
-                            PacketHelperDialog.createView(null, context, newJson)
-                            
-                            // Wait 100ms then auto-send
-                            Handler(Looper.getMainLooper()).postDelayed({
-                                PacketHelperDialog.performAutoSend()
-                            }, 100)
-                        } else {
-                            Logger.e("SuperQQShowConverter", "无法提取完整的d1, d2, d3数据，使用默认模板")
-                            writeDebugLog("无法提取完整的d1, d2, d3数据，msgData为null或提取失败，使用默认模板")
-                            // 使用默认值创建一个基本的超表模板
-                            val newJson = buildDefaultTemplate(finalFaceName)
-                            PacketHelperDialog.createView(null, context, newJson)
-                            
-                            Handler(Looper.getMainLooper()).postDelayed({
-                                PacketHelperDialog.performAutoSend()
-                            }, 100)
-                        }
+            .asBottomList("选择表情类型", options) { position, text ->
+                when (position) {
+                    0 -> { // 超级QQ秀表情
+                        // Show input dialog to get face name
+                        XPopup.Builder(fixContext)
+                            .asInputConfirm(
+                                "转超级QQ秀表情",
+                                "请输入表情名称",
+                                "嘿壳表情", // 默认值
+                                object : OnInputConfirmListener {
+                                    override fun onConfirm(faceName: String?) {
+                                        val finalFaceName = if (faceName.isNullOrEmpty()) "嘿壳表情" else faceName
+                                        Logger.i("SuperQQShowConverter", "用户输入表情名称: $finalFaceName")
+                                        writeDebugLog("用户输入表情名称: $finalFaceName")
+                                        
+                                        // Extract d1, d2, d3 from the original message if msgData is not null
+                                        val d1 = if (msgData != null) extractD1FromMsg(msgData) else null
+                                        val d2 = if (msgData != null) extractD2FromMsg(msgData) else null
+                                        val d3 = if (msgData != null) extractD3FromMsg(msgData) else null
+                                        
+                                        Logger.i("SuperQQShowConverter", "提取到d1: $d1, d2: $d2, d3: $d3")
+                                        writeDebugLog("提取到d1: $d1, d2: $d2, d3: $d3")
+                                        
+                                        if (d1 != null && d2 != null && d3 != null) {
+                                            writeDebugLog("成功提取d1, d2, d3数据，准备构建超级QQ秀模板")
+                                            // Build the template JSON with extracted values
+                                            val newJson = buildTemplateJson(d1, d2, d3, finalFaceName)
+                                            
+                                            // Call PacketHelper to fill in the JSON and send
+                                            PacketHelperDialog.createView(null, context, newJson)
+                                            
+                                            // Wait 100ms then auto-send
+                                            Handler(Looper.getMainLooper()).postDelayed({
+                                                PacketHelperDialog.performAutoSend()
+                                            }, 100)
+                                        } else {
+                                            Logger.e("SuperQQShowConverter", "无法提取完整的d1, d2, d3数据，使用默认模板")
+                                            writeDebugLog("无法提取完整的d1, d2, d3数据，msgData为null或提取失败，使用默认模板")
+                                            // 使用默认值创建一个基本的超表模板
+                                            val newJson = buildDefaultTemplate(finalFaceName)
+                                            PacketHelperDialog.createView(null, context, newJson)
+                                            
+                                            Handler(Looper.getMainLooper()).postDelayed({
+                                                PacketHelperDialog.performAutoSend()
+                                            }, 100)
+                                        }
+                                    }
+                                }
+                            )
+                            .show()
+                    }
+                    1 -> { // AI表情
+                        // Show input dialog to get face name for AI expression
+                        XPopup.Builder(fixContext)
+                            .asInputConfirm(
+                                "转AI表情",
+                                "请输入表情名称",
+                                "嘿壳表情", // 默认值
+                                object : OnInputConfirmListener {
+                                    override fun onConfirm(faceName: String?) {
+                                        val finalFaceName = if (faceName.isNullOrEmpty()) "嘿壳表情" else faceName
+                                        Logger.i("SuperQQShowConverter", "用户选择AI表情，输入名称: $finalFaceName")
+                                        writeDebugLog("用户选择AI表情，输入名称: $finalFaceName")
+                                        
+                                        // Extract d1, d2, d3 from the original message if msgData is not null
+                                        val d1 = if (msgData != null) extractD1FromMsg(msgData) else null
+                                        val d2 = if (msgData != null) extractD2FromMsg(msgData) else null
+                                        val d3 = if (msgData != null) extractD3FromMsg(msgData) else null
+                                        
+                                        Logger.i("SuperQQShowConverter", "提取到d1: $d1, d2: $d2, d3: $d3")
+                                        writeDebugLog("提取到d1: $d1, d2: $d2, d3: $d3")
+                                        
+                                        if (d1 != null && d2 != null && d3 != null) {
+                                            writeDebugLog("成功提取d1, d2, d3数据，准备构建AI表情模板")
+                                            // Build the template JSON with extracted values for AI expression
+                                            val newJson = buildTemplateJson2(d1, d2, d3, finalFaceName)
+                                            
+                                            // Call PacketHelper to fill in the JSON and send
+                                            PacketHelperDialog.createView(null, context, newJson)
+                                            
+                                            // Wait 100ms then auto-send
+                                            Handler(Looper.getMainLooper()).postDelayed({
+                                                PacketHelperDialog.performAutoSend()
+                                            }, 100)
+                                        } else {
+                                            Logger.e("SuperQQShowConverter", "无法提取完整的d1, d2, d3数据，使用默认AI表情模板")
+                                            writeDebugLog("无法提取完整的d1, d2, d3数据，msgData为null或提取失败，使用默认AI表情模板")
+                                            // 使用默认值创建一个基本的AI表情模板
+                                            val newJson = buildDefaultTemplate(finalFaceName) // 可能需要创建AI表情的默认模板
+                                            PacketHelperDialog.createView(null, context, newJson)
+                                            
+                                            Handler(Looper.getMainLooper()).postDelayed({
+                                                PacketHelperDialog.performAutoSend()
+                                            }, 100)
+                                        }
+                                    }
+                                }
+                            )
+                            .show()
                     }
                 }
-            )
+            }
             .show()
     }
     
@@ -736,5 +797,156 @@ class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
         }
     }
 ]"""
+    }
+    private fun buildTemplateJson2(d1: String, d2: String, d3: String, faceName: String): String {
+        return """
+[
+    {
+        "37": {
+            "16": 2122936,
+            "17": 160133,
+            "1": 19,
+            "19": {
+                "96": 0,
+                "65": {
+                    "2": 13
+                },
+                "66": 33556352,
+                "34": 2000,
+                "4": 10315,
+                "71": 258,
+                "72": 0,
+                "73": {
+                    "1": 45,
+                    "2": 0,
+                    "6": 107
+                },
+                "41": 0,
+                "107": 1710,
+                "79": 163920,
+                "15": 145867,
+                "80": 39,
+                "81": 16,
+                "51": 339,
+                "116": 6090842017719333217,
+                "52": 4,
+                "54": 0,
+                "55": 0,
+                "56": 21989,
+                "25": 0,
+                "90": {
+                    "3": [
+                        {
+                            "1": 0,
+                            "2": "u_blackshellNB"
+                        }
+                    ]
+                },
+                "58": 0,
+                "30": 0,
+                "31": 0
+            },
+            "6": 2,
+            "7": "3+NdwcvbghK4Ybrh0\/6PWDI9CSFScSUWPjsdrDTP2j2XCQPtnEgScuAZWGzvQzlE"
+        }
+    },
+    {
+        "9": {
+            "1": 2133178
+        }
+    },
+    {
+        "53": {
+            "1": 48,
+            "2": {
+                "1": {
+                    "1": {
+                        "1": {
+                            "1": 801156,
+                            "2": "$d1",
+                            "3": "f96a7b3b844c18590a4c955b34d8cffcc943dbfc",
+                            "4": "$d2",
+                            "5": {
+                                "1": 1,
+                                "2": 2000,
+                                "3": 0,
+                                "4": 0
+                            },
+                            "6": 240,
+                            "7": 240,
+                            "8": 0,
+                            "9": 0
+                        },
+                        "2": "$d3",
+                        "3": 1,
+                        "4": 1767104904,
+                        "5": 2678400,
+                        "6": 0
+                    },
+                    "2": {
+                        "1": "\/download?appid=1407&fileid=$d3",
+                        "2": {
+                            "1": "&spec=0",
+                            "2": "&spec=720",
+                            "3": "&spec=198"
+                        },
+                        "3": "multimedia.nt.qq.com.cn"
+                    },
+                    "5": 0,
+                    "6": {
+                        "2": "hex->38ED05A9E2EA63C9E77BE77977277DA6D951247F"
+                    }
+                },
+                "2": {
+                    "1": {
+                        "1": 14,
+                        "2": "[$faceName]",
+                        "1001": 2,
+                        "1002": 2,
+                        "1003": 1074838787,
+                        "12": {
+                            "1": 14,
+                            "34": 11,
+                            "18": {},
+                            "19": {},
+                            "3": 0,
+                            "4": 0,
+                            "21": {
+                                "1": 0,
+                                "2": {},
+                                "3": 0,
+                                "4": 0,
+                                "5": 0,
+                                "7": {}
+                            },
+                            "9": "[$faceName]",
+                            "10": 0,
+                            "12": {},
+                            "30": "&rkey=CAESOE4_cASDm1t1h9zOBR0q8M5FW0dz0Zxhjkqs5_9dweD3hzItCPaWXAl5GJPqXsW_tictlW9YKrFS",
+                            "31": "edc086e75a8b7458b7bcecdbfe53fbe7"
+                        }
+                    },
+                    "2": {
+                        "3": {}
+                    },
+                    "3": {
+                        "11": {},
+                        "12": {}
+                    },
+                    "10": 0
+                }
+            },
+            "3": 20
+        }
+    },
+    {
+        "16": {
+            "1": "x",
+            "3": 1,
+            "7": {}
+        }
+    }
+]
+        """
     }
 }
