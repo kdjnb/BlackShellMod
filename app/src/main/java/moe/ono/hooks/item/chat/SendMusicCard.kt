@@ -36,15 +36,15 @@ class SendMusicCard : BaseSwitchFunctionHookItem(), IShortcutMenu {
 
     override fun clickHandle(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        val options = arrayOf("方式一：通过API发送音乐卡片", "方式二：还没写好")
+        val options = arrayOf("方式一：OIAPI")//, "方式二：还没写好"
         
         XPopup.Builder(fixContext)
             .asCenterList("选择发送音乐卡片方式", options, OnSelectListener { position, text ->
                 when (position) {
                     0 -> sendMusicCardByAPI(context)
-                    1 -> {
-                        Toasts.info(context, "还没写好")
-                    }
+//                    1 -> {
+//                        Toasts.info(context, "还没写好")
+//                    }
                 }
             })
             .show()
@@ -153,82 +153,94 @@ class SendMusicCard : BaseSwitchFunctionHookItem(), IShortcutMenu {
             .show()
     }
 
-    private fun postRequestToAPI(context: Context, requestBody: Map<String, String>) {
-        // 构建POST请求体
-        val json = JSONObject(requestBody).toString()
-        val mediaType = "application/json; charset=utf-8".toMediaType()
-        val body = json.toRequestBody(mediaType)
+        private fun postRequestToAPI(context: Context, requestBody: Map<String, String>) {
+            // 构建POST请求体
+            val json = JSONObject(requestBody).toString()
+            val mediaType = "application/json; charset=utf-8".toMediaType()
+            val body = json.toRequestBody(mediaType)
+            val request = Request.Builder()
+                .url("https://oiapi.net/api/QQMusicJSONArk")
+                .post(body)
+                .build()
 
-        val request = Request.Builder()
-            .url("https://oiapi.net/api/QQMusicJSONArk")
-            .post(body)
-            .build()
-
-        val client = OkHttpClient()
-
-        // 发起网络请求
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                SyncUtils.runOnUiThread {
-                    Toasts.error(context, "网络请求失败: ${e.message}")
-                }
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                try {
-                    if (!response.isSuccessful) {
-                        SyncUtils.runOnUiThread {
-                            Toasts.error(context, "请求失败: ${response.code}")
-                        }
-                        return
-                    }
-
-                    val responseBody = response.body?.string()
-                    if (responseBody.isNullOrEmpty()) {
-                        SyncUtils.runOnUiThread {
-                            Toasts.error(context, "响应为空")
-                        }
-                        return
-                    }
-
-                    val jsonResponse = JSONObject(responseBody)
-                    if (jsonResponse.optInt("code") != 1) {
-                        SyncUtils.runOnUiThread {
-                            Toasts.error(context, "API返回错误: ${jsonResponse.optString("msg")}")
-                        }
-                        return
-                    }
-
-                    // 提取data字段
-                    val data = jsonResponse.optJSONObject("data")?.toString()
-                    if (data.isNullOrEmpty()) {
-                        SyncUtils.runOnUiThread {
-                            Toasts.error(context, "未找到data字段")
-                        }
-                        return
-                    }
-
-                    // 在UI线程中执行后续操作
+            val client = OkHttpClient()
+            // 发起网络请求
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
                     SyncUtils.runOnUiThread {
-                        // 自动打开PacketHelper
-                        PacketHelperDialog.createView(null, context, data)
-                        
-                        // 自动切换到ark发送模式
-                        PacketHelperDialog.setSendTypeToArk()
-                        
-                        // 等待100ms后自动点击发送
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            PacketHelperDialog.performAutoSend()
-                        }, 100)
-                    }
-                } catch (e: Exception) {
-                    SyncUtils.runOnUiThread {
-                        Toasts.error(context, "处理响应时出错: ${e.message}")
+                        Toasts.error(context, "网络请求失败: ${e.message}")
                     }
                 }
-            }
-        })
-    }
+
+    
+
+                override fun onResponse(call: Call, response: Response) {
+                    try {
+                        if (!response.isSuccessful) {
+                            SyncUtils.runOnUiThread {
+                                Toasts.error(context, "请求失败: ${response.code}")
+                            }
+                            return
+                        }
+                        val responseBody = response.body?.string()
+                        if (responseBody.isNullOrEmpty()) {
+                            SyncUtils.runOnUiThread {
+                                Toasts.error(context, "响应为空")
+                            }
+                            return
+                        }
+                        val jsonResponse = JSONObject(responseBody)
+                        if (jsonResponse.optInt("code") != 1) {
+                            SyncUtils.runOnUiThread {
+                                Toasts.error(context, "API返回错误: ${jsonResponse.optString("msg")}")
+                            }
+                            return
+                        }
+                        // 提取data字段
+                        var data = jsonResponse.optJSONObject("data")?.toString()
+                        if (data.isNullOrEmpty()) {
+                            SyncUtils.runOnUiThread {
+                                Toasts.error(context, "未找到data字段")
+                            }
+                            return
+
+                        }
+                        // 修改data字段，更新extra.uin为当前用户uin，并添加tips字段
+                        val dataJson = JSONObject(data)
+                        // 添加tips字段
+                        dataJson.put("tips", "Powered by BlackShellMod | OIAPI")
+                        // 修改extra中的uin字段为当前用户uin
+                        if (dataJson.has("extra")) {
+                            val extraJson = dataJson.getJSONObject("extra")
+                            // 获取当前用户uin
+                            val currentUin = moe.ono.util.AppRuntimeHelper.getAccount()?.toLongOrNull() ?: 0L
+                            extraJson.put("uin", currentUin)
+                        } else {
+                            // 如果没有extra字段，创建一个并添加uin
+                            val extraJson = JSONObject()
+                            val currentUin = moe.ono.util.AppRuntimeHelper.getAccount()?.toLongOrNull() ?: 0L
+                            extraJson.put("uin", currentUin)
+                            dataJson.put("extra", extraJson)
+                        }
+                        data = dataJson.toString()
+                        SyncUtils.runOnUiThread {
+                            // 自动打开PacketHelper
+                            PacketHelperDialog.createView(null, context, data)
+                            // 自动切换到ark发送模式
+                            PacketHelperDialog.setSendTypeToArk()
+                            // 等待100ms后自动点击发送
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                PacketHelperDialog.performAutoSend()
+                            }, 100)
+                        }
+                    } catch (e: Exception) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "处理响应时出错: ${e.message}")
+                        }
+                    }
+                }
+            })
+        }
 
     override fun entry(classLoader: ClassLoader) {
         // 不需要实现任何hook逻辑，因为这是一个快捷菜单项
