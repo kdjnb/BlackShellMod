@@ -205,13 +205,12 @@ class SendMusicCard : BaseSwitchFunctionHookItem(), IShortcutMenu {
                             return
 
                         }
-                        // 修改data字段，更新extra.uin为当前用户uin，并添加tips字段
-                        val dataJson = JSONObject(data)
-                        // 添加tips字段
-                        dataJson.put("tips", "Powered by BlackShellMod | OIAPI")
+                        // 修改data字段，更新extra.uin为当前用户uin，并添加tips字段到最前面
+                        val originalDataJson = JSONObject(data)
+
                         // 修改extra中的uin字段为当前用户uin
-                        if (dataJson.has("extra")) {
-                            val extraJson = dataJson.getJSONObject("extra")
+                        if (originalDataJson.has("extra")) {
+                            val extraJson = originalDataJson.getJSONObject("extra")
                             // 获取当前用户uin
                             val currentUin = moe.ono.util.AppRuntimeHelper.getAccount()?.toLongOrNull() ?: 0L
                             extraJson.put("uin", currentUin)
@@ -220,9 +219,18 @@ class SendMusicCard : BaseSwitchFunctionHookItem(), IShortcutMenu {
                             val extraJson = JSONObject()
                             val currentUin = moe.ono.util.AppRuntimeHelper.getAccount()?.toLongOrNull() ?: 0L
                             extraJson.put("uin", currentUin)
-                            dataJson.put("extra", extraJson)
+                            originalDataJson.put("extra", extraJson)
                         }
-                        data = dataJson.toString()
+                                                                
+                        // 将修改后的JSON转换为字符串，然后手动插入tips字段到最前面
+                        val modifiedDataStr = originalDataJson.toString()
+                                                                
+                        // 在第一个'{'后面插入tips字段
+                        val finalDataStr = StringBuilder(modifiedDataStr)
+                        val insertPosition = finalDataStr.indexOf('{') + 1
+                        finalDataStr.insert(insertPosition, "\"tips\":\"Powered by BlackShellMod | OIAPI\",")
+
+                        data = finalDataStr.toString()
                         SyncUtils.runOnUiThread {
                             // 自动打开PacketHelper
                             PacketHelperDialog.createView(null, context, data)
