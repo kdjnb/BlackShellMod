@@ -233,7 +233,9 @@ class SendMusicCard : BaseSwitchFunctionHookItem(), IShortcutMenu {
                                                 finalDataJson.put(key, originalDataJson.get(key))
                                             }
                                             
-                                            data = finalDataJson.toString()                        SyncUtils.runOnUiThread {
+                                            data = finalDataJson.toString()
+                                            
+                                            SyncUtils.runOnUiThread {
                             // 自动打开PacketHelper
                             PacketHelperDialog.createView(null, context, data)
                             // 自动切换到ark发送模式
