@@ -170,6 +170,9 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         val jumpSchemeUri = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
             JumpSchemeUri::class.java).path)
 
+        val sendMusicCard = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
+            SendMusicCard::class.java).path)
+
         val items = ArrayList<String>()
         if (qqPacketHelper) {
             items.add("QQPacketHelper")
@@ -194,6 +197,9 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         }
         if (jumpSchemeUri) {
             items.add("打开 Scheme 链接")
+        }
+        if (sendMusicCard) {
+            items.add("发送音乐卡片")
         }
 
         menus.forEach { menu ->
@@ -339,6 +345,14 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                             fakeLocationShare.clickHandle(view.context)
                         }
                     }
+                    "发送音乐卡片" -> {
+                        // 调用发送音乐卡片功能的处理方法
+                        val sendMusicCard = getItem(SendMusicCard::class.java)
+                        if (sendMusicCard is IShortcutMenu) {
+                            sendMusicCard.clickHandle(view.context)
+                        }
+                   }
+
 
                 }
             }

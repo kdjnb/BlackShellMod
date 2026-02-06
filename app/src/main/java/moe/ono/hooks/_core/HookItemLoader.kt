@@ -7,6 +7,7 @@ import moe.ono.hooks._base.ApiHookItem
 import moe.ono.hooks._base.BaseClickableFunctionHookItem
 import moe.ono.hooks._base.BaseSwitchFunctionHookItem
 import moe.ono.hooks._core.factory.HookItemFactory
+import moe.ono.loader.hookapi.IShortcutMenu
 import moe.ono.util.Logger
 
 
@@ -44,7 +45,26 @@ class HookItemLoader {
                 }
             }
 
+            // 检查是否是菜单项并添加到BottomShortcutMenu中
+            if (hookItem is IShortcutMenu) {
+                try {
+                    // 获取BottomShortcutMenu的companion object类
+                    val companionClass = Class.forName("moe.ono.hooks.item.chat.BottomShortcutMenu\$Companion")
+                    
+                    // 获取companion object实例
+                    val companionInstanceField = companionClass.getDeclaredField("INSTANCE")
+                    companionInstanceField.isAccessible = true
+                    val companionInstance = companionInstanceField.get(null)
 
+                    // 获取menus字段并添加菜单项
+                    val menusField = companionClass.getDeclaredField("menus")
+                    menusField.isAccessible = true
+                    val menusList = menusField.get(companionInstance) as java.util.ArrayList<IShortcutMenu>
+                    menusList.add(hookItem as IShortcutMenu)
+                } catch (e: Exception) {
+                    Logger.e("Failed to add menu item to BottomShortcutMenu", e)
+                }
+            }
         }
     }
 

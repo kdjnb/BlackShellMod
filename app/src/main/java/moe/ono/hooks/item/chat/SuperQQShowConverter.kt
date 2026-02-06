@@ -4,21 +4,13 @@ import android.annotation.SuppressLint
 import android.content.Context
 import com.lxj.xpopup.XPopup
 import com.lxj.xpopup.interfaces.OnInputConfirmListener
-import com.tencent.qqnt.kernel.nativeinterface.*
 import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XC_MethodHook.MethodHookParam
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.*
 import moe.ono.R
-import moe.ono.bridge.ntapi.ChatTypeConstants
-import moe.ono.bridge.ntapi.MsgServiceHelper
 import moe.ono.creator.PacketHelperDialog
 import moe.ono.hooks._base.BaseSwitchFunctionHookItem
 import moe.ono.hooks._core.annotation.HookItem
 import moe.ono.hooks._core.factory.HookItemFactory.getItem
 import moe.ono.hooks.dispatcher.OnMenuBuilder
-import moe.ono.hooks.protocol.sendMessage
-import moe.ono.reflex.Reflex
 import moe.ono.reflex.invoke
 import moe.ono.ui.CommonContextWrapper
 import moe.ono.util.*
@@ -81,7 +73,7 @@ class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
             if (context == null) {
                 try {
                     // 尝试从父类或其他方法获取context
-                    val activity = moe.ono.util.ContextUtils.getCurrentActivity()
+                    val activity = ContextUtils.getCurrentActivity()
                     if (activity != null) {
                         context = activity
                         writeDebugLog("通过ContextUtils.getCurrentActivity()获取context成功")
