@@ -23,7 +23,7 @@ import java.util.*
 @SuppressLint("DiscouragedApi")
 @HookItem(
     path = "聊天与消息/一键转超级QQ秀表情",
-    description = "长按图片或表情 → 转超表"
+    description = "长按图片或表情 → 转超表，别强求所有人都能用，至少9.2.27用不了。。。"
 )
 class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
 
