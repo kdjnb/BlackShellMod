@@ -13,7 +13,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.textfield.TextInputLayout
 import com.lxj.xpopup.XPopup
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XC_MethodHook.MethodHookParam
@@ -39,9 +38,6 @@ import moe.ono.hooks.item.developer.JumpSchemeUri
 import moe.ono.hooks.item.developer.QQHookCodec
 import moe.ono.hooks.item.developer.QQPacketHelperEntry
 import moe.ono.hooks.item.sigma.QQMessageTracker
-import moe.ono.hooks.item.chat.SendLocationCard
-import moe.ono.hooks.item.chat.SendWhiteText
-import moe.ono.hooks.item.chat.FakeLocationShare
 import moe.ono.loader.hookapi.IShortcutMenu
 import moe.ono.reflex.XMethod
 import moe.ono.ui.CommonContextWrapper
@@ -49,8 +45,6 @@ import moe.ono.util.Initiator
 import moe.ono.util.Logger
 import moe.ono.util.Session
 import moe.ono.util.SyncUtils
-
-import moe.ono.hooks._core.factory.HookItemFactory.getItem
 
 @SuppressLint("DiscouragedApi")
 @HookItem(
@@ -170,8 +164,8 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         val jumpSchemeUri = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
             JumpSchemeUri::class.java).path)
 
-        val sendMusicCard = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
-            SendMusicCard::class.java).path)
+        val cardFunc = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
+            CardFunc::class.java).path)
 
         val items = ArrayList<String>()
         if (qqPacketHelper) {
@@ -198,8 +192,8 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         if (jumpSchemeUri) {
             items.add("打开 Scheme 链接")
         }
-        if (sendMusicCard) {
-            items.add("发送音乐卡片")
+        if (cardFunc) {
+            items.add("卡片功能")
         }
 
         menus.forEach { menu ->
@@ -345,11 +339,11 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                             fakeLocationShare.clickHandle(view.context)
                         }
                     }
-                    "发送音乐卡片" -> {
-                        // 调用发送音乐卡片功能的处理方法
-                        val sendMusicCard = getItem(SendMusicCard::class.java)
-                        if (sendMusicCard is IShortcutMenu) {
-                            sendMusicCard.clickHandle(view.context)
+                    "卡片功能" -> {
+                        // 调用卡片功能的处理方法
+                        val cardFunc = getItem(CardFunc::class.java)
+                        if (cardFunc is IShortcutMenu) {
+                            cardFunc.clickHandle(view.context)
                         }
                    }
 
