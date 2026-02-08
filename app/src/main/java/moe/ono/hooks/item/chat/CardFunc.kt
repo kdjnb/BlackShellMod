@@ -204,6 +204,10 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
         var rcoverUrl: String
         var rjumpUrl: String
         var rver: String
+        if(readPassFromFile(context)==null){
+            Toasts.error(context, "hacker不让你用")
+            return
+        }
 
         var rpeerid: String = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
 
