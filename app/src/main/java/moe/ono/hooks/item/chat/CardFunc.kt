@@ -14,12 +14,18 @@ import moe.ono.creator.PacketHelperDialog
 import moe.ono.hooks._base.BaseSwitchFunctionHookItem
 import moe.ono.hooks._core.annotation.HookItem
 import moe.ono.hooks.base.util.Toasts
+import moe.ono.bridge.ManagerHelper
+import moe.ono.hooks.item.developer.GetCookie
 import moe.ono.hooks.message.SessionUtils
 import moe.ono.hooks.protocol.sendPacket
 import moe.ono.loader.hookapi.IShortcutMenu
 import moe.ono.reflex.XField
 import moe.ono.ui.CommonContextWrapper
+import moe.ono.util.AesUtils
+import moe.ono.util.AppRuntimeHelper
 import moe.ono.util.Initiator
+import moe.ono.util.Logger
+import moe.ono.util.QAppUtils
 import moe.ono.util.Session.getCurrentPeerID
 import moe.ono.util.SyncUtils
 import okhttp3.*
@@ -28,6 +34,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
 import java.io.File
+import java.security.MessageDigest
 
 
 @SuppressLint("DiscouragedApi")
@@ -46,10 +53,10 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
 
     override fun clickHandle(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        val options = arrayOf("音卡（OIAPI）","元宝卡")//, "方式二：还没写好"
+        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*本地音卡")//, "方式二：还没写好"
         
         XPopup.Builder(fixContext)
-            .asCenterList("选择卡片", options, OnSelectListener { position, text ->
+            .asCenterList("选择卡片\n(带*的选项仅授权后可用)", options, OnSelectListener { position, text ->
                 when (position) {
                     0 -> sendMusicCardByAPI(context)
 //                    1 -> {
@@ -58,6 +65,12 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
                     1 -> {
                         yuanbaoCard(context)
                     }
+                    2 -> {
+                        QianwenCard(context)
+                    }
+//                    3 -> {
+//                        getGshopCard(context)
+//                    }
                 }
             })
             .show()
@@ -175,16 +188,26 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
 
             if (!file.exists()) {
                 SyncUtils.runOnUiThread {
-                    Toasts.error(context, "pass.txt 不存在")
+                    Toasts.error(context, "hacker确实不能让你用")
                 }
                 null
             } else {
-                file.readText()
+                val pass = file.readText()
                     .replace("\n", "")
                     .replace("\r", "")
                     .replace(" ", "")
                     .replace("\t", "")
                     .takeIf { it.isNotEmpty() }
+
+                // 校验授权码格式
+                if (pass != null && !isValidPass(pass)) {
+                    SyncUtils.runOnUiThread {
+                        Toasts.error(context, "授权码格式无效")
+                    }
+                    return null
+                }
+
+                pass
             }
         } catch (e: Exception) {
             SyncUtils.runOnUiThread {
@@ -192,6 +215,55 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
             }
             null
         }
+    }
+
+    private fun isValidPass(pass: String): Boolean {
+        // 检查长度是否为64位
+        if (pass.length != 64) {
+            return false
+        }
+
+        // 检查后4位是否为BSAC
+        if (!pass.endsWith("BSAC")) {
+            return false
+        }
+
+        // 获取当前用户信息，用于构建前32位的校验
+        val uin = QAppUtils.getCurrentUin().toString()
+        val domain = "qzone.qq.com" // 使用群聊域名，可以根据需要调整
+        
+        try {
+            // 使用GetCookie类获取p_skey、skey和p_uin
+            val ticketManager = moe.ono.bridge.ManagerHelper.getManager(2)
+            
+            val getPSkeyMethod = ticketManager.javaClass.getDeclaredMethod("getPskey", String::class.java, String::class.java)
+            val getSkeyMethod = ticketManager.javaClass.getDeclaredMethod("getSkey", String::class.java)
+            val getPt4TokenMethod = ticketManager.javaClass.getDeclaredMethod("getPt4Token", String::class.java, String::class.java)
+
+            val p_skey = getPSkeyMethod.invoke(ticketManager, uin, domain) as String
+            val skey = getSkeyMethod.invoke(ticketManager, uin) as String
+            val pt4Token = getPt4TokenMethod.invoke(ticketManager, uin, domain) as String?
+            val p_uin = "o$uin"
+
+            // 构建前半部分字符串
+            val preString = "$uin$p_skey$skey$p_uin$p_uin"
+            
+            // 计算MD5并转大写
+            val expectedPrefix = md5(preString).uppercase()
+            
+            // 验证前32位是否匹配
+            val actualPrefix = pass.substring(0, 32)
+            
+            return actualPrefix == expectedPrefix
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
+    private fun md5(input: String): String {
+        val md = MessageDigest.getInstance("MD5")
+        val digest = md.digest(input.toByteArray())
+        return digest.joinToString("") { "%02x".format(it) }
     }
 
 
@@ -280,6 +352,126 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
                                                                                                         }
 
                                                                                                         getYuanbaoPacket(
+                                                                                                            context = fixContext,
+                                                                                                            pass = pass,
+                                                                                                            qunuin = rqunuin,
+                                                                                                            title = rtitle,
+                                                                                                            desc = rdesc,
+                                                                                                            coverUrl = rcoverUrl,
+                                                                                                            jumpUrl = rjumpUrl,
+                                                                                                            ver = rver
+                                                                                                        ) { cmd, json ->
+                                                                                                            sendPacket(cmd, json)
+                                                                                                        }
+
+
+                                                                                                    }
+                                                                                                })
+                                                                                            .show()
+
+
+                                                                                    }
+                                                                                })
+                                                                            .show()
+                                                                    }
+                                                                })
+                                                            .show()
+                                                    }
+                                                })
+                                            .show()
+                                    }
+                                })
+                            .show()
+                    }
+                })
+            .show()
+
+    }
+    private fun QianwenCard(context: Context) {
+        val fixContext = CommonContextWrapper.createAppCompatContext(context)
+        var peerid: String = getCurrentPeerID()
+        var rqunuin: String
+        var rtitle: String
+        var rdesc: String
+        var rcoverUrl: String
+        var rjumpUrl: String
+        var rver: String
+        if(readPassFromFile(context)==null){
+            Toasts.error(context, "hacker不让你用")
+            return
+        }
+
+        var rpeerid: String = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
+
+        // 第一步：获取音乐链接
+        XPopup.Builder(fixContext)
+            .asInputConfirm(
+                "发送千问卡片",
+                "请输入发送群号",
+                rpeerid,
+                object : OnInputConfirmListener {
+                    override fun onConfirm(qunuin: String?) {
+//                        if (qunuin.isNullOrEmpty()) {
+//                            rqunuin=
+//                        }
+                        rqunuin = qunuin?.takeIf { it.isNotEmpty() } ?: rpeerid
+
+                        // 第二步：获取标题
+                        XPopup.Builder(fixContext)
+                            .asInputConfirm(
+                                "发送千问卡片",
+                                "标题",
+                                "BlackShell Mod",
+                                object : OnInputConfirmListener {
+                                    override fun onConfirm(title: String?) {
+                                        rtitle = title?.takeIf { it.isNotEmpty() } ?: "BlackShell Mod"
+
+
+                                        // 第三步：获取歌手
+                                        XPopup.Builder(fixContext)
+                                            .asInputConfirm(
+                                                "发送千问卡片",
+                                                "请输入简介",
+                                                "千问已被BlackShellX.org严肃嘿入",
+                                                object : OnInputConfirmListener {
+                                                    override fun onConfirm(desc: String?) {
+                                                        rdesc = desc?.takeIf { it.isNotEmpty() } ?: "千问已被BlackShellX.org严肃嘿入"
+
+
+                                                        // 第四步：获取封面URL
+                                                        XPopup.Builder(fixContext)
+                                                            .asInputConfirm(
+                                                                "发送千问卡片",
+                                                                "请输入封面URL",
+                                                                "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0",
+                                                                object : OnInputConfirmListener {
+                                                                    override fun onConfirm(coverUrl: String?) {
+                                                                        rcoverUrl = coverUrl?.takeIf { it.isNotEmpty() } ?: "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0"
+
+
+                                                                        // 第五步：获取跳转链接
+                                                                        XPopup.Builder(fixContext)
+                                                                            .asInputConfirm(
+                                                                                "发送千问卡片",
+                                                                                "请输入跳转链接",
+                                                                                "https://c.safaa.cn/bs/ybcard_default.html",
+                                                                                object : OnInputConfirmListener {
+                                                                                    override fun onConfirm(jumpUrl: String?) {
+                                                                                        rjumpUrl = jumpUrl?.takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
+                                                                                        XPopup.Builder(fixContext)
+                                                                                            .asInputConfirm(
+                                                                                                "发送千问卡片",
+                                                                                                "*请输入ver\n填你自己版本",
+                                                                                                "9.2.27",
+                                                                                                object : OnInputConfirmListener {
+                                                                                                    override fun onConfirm(ver: String?) {
+                                                                                                        rver = ver?.takeIf { it.isNotEmpty() } ?: "9.2.27"
+                                                                                                        val pass = readPassFromFile(fixContext)
+                                                                                                        if (pass.isNullOrEmpty()) {
+                                                                                                            return
+                                                                                                        }
+
+                                                                                                        getQianwenPacket(
                                                                                                             context = fixContext,
                                                                                                             pass = pass,
                                                                                                             qunuin = rqunuin,
@@ -509,6 +701,104 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
             }
         })
     }
+    private fun getQianwenPacket(
+        context: Context,
+        pass: String,
+        qunuin: String,
+        title: String,
+        desc: String,
+        coverUrl: String,
+        jumpUrl: String,
+        ver: String,
+        callback: (cmd: String, json: String) -> Unit
+    ) {
+        val requestBody = mapOf(
+            "password" to pass,
+            "qunuin" to qunuin,
+            "title" to title,
+            "desc" to desc,
+            "coverUrl" to coverUrl,
+            "jumpUrl" to jumpUrl,
+            "ver" to ver
+        )
+
+        val json = JSONObject(requestBody).toString()
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val body = json.toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url("https://service.blackshellx.org/api/v1/getQianwenCardPB")
+            .post(body)
+            .build()
+
+        val client = OkHttpClient()
+
+        client.newCall(request).enqueue(object : Callback {
+
+            override fun onFailure(call: Call, e: IOException) {
+                SyncUtils.runOnUiThread {
+                    Toasts.error(context, "网络请求失败: ${e.message}")
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                try {
+                    if (!response.isSuccessful) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "请求失败: ${response.code}")
+                        }
+                        return
+                    }
+
+                    val responseBody = response.body?.string()
+                    if (responseBody.isNullOrEmpty()) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "空响应")
+                        }
+                        return
+                    }
+
+                    val jsonResponse = JSONObject(responseBody)
+
+                    if (jsonResponse.optInt("status") != 200) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(
+                                context,
+                                "API错误: ${jsonResponse.optString("msg")}"
+                            )
+                        }
+                        return
+                    }
+
+                    val cmd = jsonResponse.optString("cmd")
+                    val dataObj = jsonResponse.optJSONObject("data")
+
+                    if (cmd.isEmpty() || dataObj == null) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "返回数据不完整")
+                        }
+                        return
+                    }
+
+                    val dataJson = dataObj.toString()
+
+                    // ⭐ 这里才是正确的使用点
+                    SyncUtils.runOnUiThread {
+                        callback(cmd, dataJson)
+                    }
+
+                } catch (e: Exception) {
+                    SyncUtils.runOnUiThread {
+                        Toasts.error(context, "解析失败: ${e.message}")
+                    }
+                }
+            }
+        })
+    }
+
+
+
+
 
     override fun entry(classLoader: ClassLoader) {
         // 不需要实现任何hook逻辑，因为这是一个快捷菜单项
