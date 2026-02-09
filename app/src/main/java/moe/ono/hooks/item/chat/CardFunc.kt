@@ -103,7 +103,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
     override fun clickHandle(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间盲盒签卡","*QQ空间video卡","*无tag图文")//, "方式二：还没写好"
+        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间盲盒签卡","*QQ空间video卡","*无tag图文卡")//, "方式二：还没写好"
         
         XPopup.Builder(fixContext)
             .asCenterList("选择卡片(带*的选项仅授权后可用)", options, OnSelectListener { position, text ->
