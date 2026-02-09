@@ -103,10 +103,10 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
     override fun clickHandle(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间卡")//, "方式二：还没写好"
+        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间盲盒签卡","*QQ空间video卡")//, "方式二：还没写好"
         
         XPopup.Builder(fixContext)
-            .asCenterList("选择卡片\n(带*的选项仅授权后可用)", options, OnSelectListener { position, text ->
+            .asCenterList("选择卡片(带*的选项仅授权后可用)", options, OnSelectListener { position, text ->
                 when (position) {
                     0 -> sendMusicCardByAPI(context)
 //                    1 -> {
@@ -123,6 +123,9 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
                     }
                     4 -> {
                         getQzoneCard(context)
+                    }
+                    5 -> {
+                        getQzoneCard2(context)
                     }
                 }
             })
@@ -1352,6 +1355,178 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
                 }
             })
             }
+    private fun getQzoneCard2(context: Context) {
+        val fixContext = CommonContextWrapper.createAppCompatContext(context)
+
+        // 检查授权码
+        if (readPassFromFile(context) == null) {
+            Toasts.error(context, "hacker不让你用")
+            return
+        }
+
+        var tag: String
+        var jumpUrl: String
+        var preview: String
+        var tagIcon: String
+
+        // 第一步：获取标题
+        XPopup.Builder(fixContext)
+            .asInputConfirm(
+                "QQ空间视频卡片",
+                "请输入tag",
+                "BlackShell Mod",
+                object : OnInputConfirmListener {
+                    override fun onConfirm(inputTag: String?) {
+                        tag = inputTag?.takeIf { it.isNotEmpty() } ?: "BlackShell Mod"
+
+                        // 第二步：获取跳转链接
+                        XPopup.Builder(fixContext)
+                            .asInputConfirm(
+                                "QQ空间视频卡片",
+                                "请输入跳转链接",
+                                "https://c.safaa.cn/bs/ybcard_default.html",
+                                object : OnInputConfirmListener {
+                                    override fun onConfirm(inputJumpUrl: String?) {
+                                        jumpUrl = inputJumpUrl?.takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
+
+                                        // 第三步：获取预览图链接
+                                        XPopup.Builder(fixContext)
+                                            .asInputConfirm(
+                                                "QQ空间视频卡片",
+                                                "请输入预览图链接",
+                                                "https://thirdqq.qlogo.cn/g?b=qq&nk="+QAppUtils.getCurrentUin().toString()+"&s=640",
+                                                object : OnInputConfirmListener {
+                                                    override fun onConfirm(inputPreview: String?) {
+                                                        preview = inputPreview?.takeIf { it.isNotEmpty() } ?: ("https://thirdqq.qlogo.cn/g?b=qq&nk="+QAppUtils.getCurrentUin().toString()+"&s=640")
+
+                                                        // 第四步：获取提示文本
+                                                        XPopup.Builder(fixContext)
+                                                            .asInputConfirm(
+                                                                "QQ空间视频卡片",
+                                                                "请输入tag图标",
+                                                                "https://thirdqq.qlogo.cn/g?b=qq&nk="+QAppUtils.getCurrentUin().toString()+"&s=640",
+                                                                object : OnInputConfirmListener {
+                                                                    override fun onConfirm(inputTagIcon: String?) {
+                                                                        tagIcon = inputTagIcon?.takeIf { it.isNotEmpty() } ?: "邀请你抽取AI盲盒签"
+                                                                        sendQzoneCardRequest2(context, tag, jumpUrl, preview, tagIcon)
+                                                                    }
+                                                                })
+                                                            .show()
+                                                    }
+                                                })
+                                            .show()
+                                    }
+                                })
+                            .show()
+                    }
+                })
+            .show()
+    }
+
+    private fun sendQzoneCardRequest2(
+        context: Context,
+        tag: String,
+        jumpUrl: String,
+        preview: String,
+        tagIcon: String,
+    ) {
+        val password = readPassFromFile(context) ?: run {
+            Toasts.error(context, "授权码无效")
+            return
+        }
+
+        // 构造请求体
+        val requestBody = mapOf(
+            "password" to password,
+            "tag" to tag,
+            "jumpUrl" to jumpUrl,
+            "preview" to preview,
+            "tagIcon" to tagIcon
+        )
+
+        val json = JSONObject(requestBody).toString()
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val body = json.toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url("https://service.blackshellx.org/api/v1/getQzoneVideoPB")
+            .post(body)
+            .build()
+
+        val client = OkHttpClient()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                SyncUtils.runOnUiThread {
+                    Toasts.error(context, "网络请求失败: ${e.message}")
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                try {
+                    if (!response.isSuccessful) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "请求失败: ${response.code}")
+                        }
+                        return
+                    }
+
+                    val responseBody = response.body?.string()
+                    if (responseBody.isNullOrEmpty()) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "空响应")
+                        }
+                        return
+                    }
+
+                    val jsonResponse = JSONObject(responseBody)
+
+                    // 检查返回状态
+                    val status = if (jsonResponse.has("status")) {
+                        jsonResponse.optInt("status")
+                    } else if (jsonResponse.has("code")) {
+                        jsonResponse.optInt("code")
+                    } else {
+                        500 // 默认错误状态
+                    }
+
+                    if (status != 200) {
+                        val message = if (jsonResponse.has("msg")) {
+                            jsonResponse.optString("msg")
+                        } else if (jsonResponse.has("message")) {
+                            jsonResponse.optString("message")
+                        } else {
+                            "未知错误"
+                        }
+
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "API错误: $message")
+                        }
+                        return
+                    }
+
+                    // 提取cmd和data字段
+                    val cmd = jsonResponse.optString("cmd")
+                    val dataObj = jsonResponse.optJSONObject("data")
+
+                    if (cmd.isEmpty() || dataObj == null) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "返回数据不完整")
+                        }
+                        return
+                    }
+
+                    // 发送Packet并等待响应
+                    val dataJson = dataObj.toString()
+                    sendPacketWithCallback(cmd, dataJson, context)
+                } catch (e: Exception) {
+                    SyncUtils.runOnUiThread {
+                        Toasts.error(context, "解析响应时出错: ${e.message}")
+                    }
+                }
+            }
+        })
+    }
         
             private fun sendPacketWithCallback(cmd: String, json: String, context: Context) {
                 // 设置临时响应处理器
