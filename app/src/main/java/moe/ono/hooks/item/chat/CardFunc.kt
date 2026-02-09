@@ -19,6 +19,7 @@ import moe.ono.hooks.item.developer.GetCookie
 import moe.ono.hooks.message.SessionUtils
 import moe.ono.hooks.protocol.sendPacket
 import moe.ono.loader.hookapi.IShortcutMenu
+import moe.ono.loader.hookapi.IRespHandler
 import moe.ono.reflex.XField
 import moe.ono.ui.CommonContextWrapper
 import moe.ono.util.AesUtils
@@ -35,6 +36,8 @@ import org.json.JSONObject
 import java.io.IOException
 import java.io.File
 import java.security.MessageDigest
+import com.tencent.qphone.base.remote.FromServiceMsg
+import com.tencent.qphone.base.remote.ToServiceMsg
 
 
 @SuppressLint("DiscouragedApi")
@@ -42,7 +45,7 @@ import java.security.MessageDigest
     path = "聊天与消息/卡片功能",
     description = "请勿使用此功能用作任何违法行为，作者概不负责。部分功能非开源，你无法通过任何方式从BlackShell Mod中获取任何一点关于未开源的卡片的线索"
 )
-class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
+class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
     data class Product(
         val img: String,
@@ -52,6 +55,10 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
         val title: String,
         val url: String
     )
+
+    // 用于处理响应的回调存储
+    private var pendingResponseCallback: ((String?) -> Unit)? = null
+    private var pendingResponseCmd: String? = null
 
     /**
      * Write debug log to file
@@ -75,6 +82,18 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
         }
     }
 
+    // IRespHandler接口实现
+    override val cmd: String
+        get() = pendingResponseCmd ?: ""
+
+    override fun onHandle(data: JSONObject?, service: ToServiceMsg, fromServiceMsg: FromServiceMsg) {
+        if (service.serviceCmd == pendingResponseCmd) {
+            pendingResponseCallback?.invoke(data?.toString())
+            pendingResponseCallback = null
+            pendingResponseCmd = null
+        }
+    }
+
     override fun isAdd(): Boolean {
         return this.isEnabled
     }
@@ -84,7 +103,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
 
     override fun clickHandle(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡")//, "方式二：还没写好"
+        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间卡")//, "方式二：还没写好"
         
         XPopup.Builder(fixContext)
             .asCenterList("选择卡片\n(带*的选项仅授权后可用)", options, OnSelectListener { position, text ->
@@ -101,6 +120,9 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
                     }
                     3 -> {
                         getGshopCard(context)
+                    }
+                    4 -> {
+                        getQzoneCard(context)
                     }
                 }
             })
@@ -1138,14 +1160,278 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu {
                 }
             }
         })
-    }
-
-
-
-
-
-    override fun entry(classLoader: ClassLoader) {
-        // 不需要实现任何hook逻辑，因为这是一个快捷菜单项
-        // 功能通过点击菜单触发，而不是通过hook实现
-    }
-}
+        }
+    
+        private fun getQzoneCard(context: Context) {
+            val fixContext = CommonContextWrapper.createAppCompatContext(context)
+    
+            // 检查授权码
+            if (readPassFromFile(context) == null) {
+                Toasts.error(context, "hacker不让你用")
+                return
+            }
+    
+            var title: String
+            var jumpUrl: String
+            var preview: String
+            var prompt: String
+            var btnText: String
+    
+            // 第一步：获取标题
+            XPopup.Builder(fixContext)
+                .asInputConfirm(
+                    "QQ空间卡片",
+                    "请输入标题",
+                    "邀请你抽取AI盲盒签",
+                    object : OnInputConfirmListener {
+                        override fun onConfirm(inputTitle: String?) {
+                            title = inputTitle?.takeIf { it.isNotEmpty() } ?: "邀请你抽取AI盲盒签"
+    
+                            // 第二步：获取跳转链接
+                            XPopup.Builder(fixContext)
+                                .asInputConfirm(
+                                    "QQ空间卡片",
+                                    "请输入跳转链接",
+                                    "https://h5.tu.qq.com/stable/daily-check-in/index?parent_trace_id=3a423341-4cec-174b-7d76-86d2a1508d66&current_channel=link&root_channel=qiandao&level=1&jump2App=1",
+                                    object : OnInputConfirmListener {
+                                        override fun onConfirm(inputJumpUrl: String?) {
+                                            jumpUrl = inputJumpUrl?.takeIf { it.isNotEmpty() } ?: "https://h5.tu.qq.com/stable/daily-check-in/index?parent_trace_id=3a423341-4cec-174b-7d76-86d2a1508d66&current_channel=link&root_channel=qiandao&level=1&jump2App=1"
+    
+                                            // 第三步：获取预览图链接
+                                            XPopup.Builder(fixContext)
+                                                .asInputConfirm(
+                                                    "QQ空间卡片",
+                                                    "请输入预览图链接",
+                                                    "https://shadow-h5-prd-1251316161.file.myqcloud.com/daily-check-in/regular_skin_v2/result/preview.png",
+                                                    object : OnInputConfirmListener {
+                                                        override fun onConfirm(inputPreview: String?) {
+                                                            preview = inputPreview?.takeIf { it.isNotEmpty() } ?: "https://shadow-h5-prd-1251316161.file.myqcloud.com/daily-check-in/regular_skin_v2/result/preview.png"
+    
+                                                            // 第四步：获取提示文本
+                                                            XPopup.Builder(fixContext)
+                                                                .asInputConfirm(
+                                                                    "QQ空间卡片",
+                                                                    "请输入外显(prompt)",
+                                                                    "邀请你抽取AI盲盒签",
+                                                                    object : OnInputConfirmListener {
+                                                                        override fun onConfirm(inputPrompt: String?) {
+                                                                            prompt = inputPrompt?.takeIf { it.isNotEmpty() } ?: "邀请你抽取AI盲盒签"
+    
+                                                                            // 第五步：获取按钮文字
+                                                                            XPopup.Builder(fixContext)
+                                                                                .asInputConfirm(
+                                                                                    "QQ空间卡片",
+                                                                                    "请输入按钮文字",
+                                                                                    "立即抽取",
+                                                                                    object : OnInputConfirmListener {
+                                                                                        override fun onConfirm(inputBtnText: String?) {
+                                                                                            btnText = inputBtnText?.takeIf { it.isNotEmpty() } ?: "立即抽取"
+    
+                                                                                            // 所有信息收集完成，发送请求到API
+                                                                                            sendQzoneCardRequest(context, title, jumpUrl, preview, prompt, btnText)
+                                                                                        }
+                                                                                    })
+                                                                                .show()
+                                                                        }
+                                                                    })
+                                                                .show()
+                                                        }
+                                                    })
+                                                .show()
+                                        }
+                                    })
+                                .show()
+                        }
+                    })
+                .show()
+        }
+    
+        private fun sendQzoneCardRequest(
+            context: Context,
+            title: String,
+            jumpUrl: String,
+            preview: String,
+            prompt: String,
+            btnText: String
+        ) {
+            val password = readPassFromFile(context) ?: run {
+                Toasts.error(context, "授权码无效")
+                return
+            }
+    
+            // 构造请求体
+            val requestBody = mapOf(
+                "password" to password,
+                "title" to title,
+                "jumpUrl" to jumpUrl,
+                "preview" to preview,
+                "prompt" to prompt,
+                "btnText" to btnText
+            )
+    
+            val json = JSONObject(requestBody).toString()
+            val mediaType = "application/json; charset=utf-8".toMediaType()
+            val body = json.toRequestBody(mediaType)
+    
+            val request = Request.Builder()
+                .url("https://service.blackshellx.org/api/v1/getQzonePB")
+                .post(body)
+                .build()
+    
+            val client = OkHttpClient()
+    
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    SyncUtils.runOnUiThread {
+                        Toasts.error(context, "网络请求失败: ${e.message}")
+                    }
+                }
+    
+                override fun onResponse(call: Call, response: Response) {
+                    try {
+                        if (!response.isSuccessful) {
+                            SyncUtils.runOnUiThread {
+                                Toasts.error(context, "请求失败: ${response.code}")
+                            }
+                            return
+                        }
+    
+                        val responseBody = response.body?.string()
+                        if (responseBody.isNullOrEmpty()) {
+                            SyncUtils.runOnUiThread {
+                                Toasts.error(context, "空响应")
+                            }
+                            return
+                        }
+    
+                        val jsonResponse = JSONObject(responseBody)
+    
+                        // 检查返回状态
+                        val status = if (jsonResponse.has("status")) {
+                            jsonResponse.optInt("status")
+                        } else if (jsonResponse.has("code")) {
+                            jsonResponse.optInt("code")
+                        } else {
+                            500 // 默认错误状态
+                        }
+    
+                        if (status != 200) {
+                            val message = if (jsonResponse.has("msg")) {
+                                jsonResponse.optString("msg")
+                            } else if (jsonResponse.has("message")) {
+                                jsonResponse.optString("message")
+                            } else {
+                                "未知错误"
+                            }
+    
+                            SyncUtils.runOnUiThread {
+                                Toasts.error(context, "API错误: $message")
+                            }
+                            return
+                        }
+    
+                        // 提取cmd和data字段
+                        val cmd = jsonResponse.optString("cmd")
+                        val dataObj = jsonResponse.optJSONObject("data")
+    
+                        if (cmd.isEmpty() || dataObj == null) {
+                            SyncUtils.runOnUiThread {
+                                Toasts.error(context, "返回数据不完整")
+                            }
+                            return
+                        }
+    
+                        // 发送Packet并等待响应
+                        val dataJson = dataObj.toString()
+                        sendPacketWithCallback(cmd, dataJson, context)
+                    } catch (e: Exception) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "解析响应时出错: ${e.message}")
+                        }
+                    }
+                }
+            })
+            }
+        
+            private fun sendPacketWithCallback(cmd: String, json: String, context: Context) {
+                // 设置临时响应处理器
+                pendingResponseCmd = cmd
+                pendingResponseCallback = { response ->
+                    handleSendPacketResponse(response, context)
+                }
+                
+                // 使用纯正的sendPacket方法发送数据包
+                SyncUtils.runOnUiThread {
+                    try {
+                        sendPacket(cmd, json)
+                    } catch (e: Exception) {
+                        Toasts.error(context, "发送数据包失败: ${e.message}")
+                        // 清理回调
+                        pendingResponseCallback = null
+                        pendingResponseCmd = null
+                    }
+                }
+            }
+        
+            private fun handleSendPacketResponse(response: String?, context: Context) {
+                SyncUtils.runOnUiThread {
+                    try {
+                        if (response.isNullOrEmpty()) {
+                            Toasts.error(context, "发送数据包后没有收到响应")
+                            return@runOnUiThread
+                        }
+        
+                        val responseJson = JSONObject(response)
+                        // 检查响应中是否有"3"字段，该字段包含ark数据
+                        if (responseJson.has("3")) {
+                            val arkDataString = responseJson.optString("3")
+                            if (arkDataString.isNotEmpty()) {
+                                // 解析ark数据字符串为JSON对象
+                                val arkJsonObject = JSONObject(arkDataString)
+        
+                                // 检查arkJsonObject中是否有"arKMsg"字段
+                                if (arkJsonObject.has("arKMsg")) {
+                                    val arKMsg = arkJsonObject.optString("arKMsg")
+                                    if (arKMsg.isNotEmpty()) {
+                                        // arKMsg就是最终的Ark数据
+                                        openPacketHelperAndSendArk(arKMsg, context)
+                                    } else {
+                                        Toasts.error(context, "返回的ark数据格式不正确，缺少arKMsg字段")
+                                    }
+                                } else {
+                                    Toasts.error(context, "返回的ark数据格式不正确，缺少arKMsg字段")
+                                }
+                            } else {
+                                Toasts.error(context, "返回的ark数据为空")
+                            }
+                        } else {
+                            Toasts.error(context, "返回的响应中没有'3'字段")
+                        }
+                    } catch (e: Exception) {
+                        Toasts.error(context, "处理SendPacket响应时出错: ${e.message}")
+                    }
+                }
+            }
+        
+            private fun openPacketHelperAndSendArk(arkData: String, context: Context) {
+                SyncUtils.runOnUiThread {
+                    try {
+                        // 自动打开PacketHelper
+                        PacketHelperDialog.createView(null, context, arkData)
+                        // 自动切换到ark发送模式
+                        PacketHelperDialog.setSendTypeToArk()
+                        // 等待100ms后自动点击发送
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            PacketHelperDialog.performAutoSend()
+                        }, 100)
+                    } catch (e: Exception) {
+                        Toasts.error(context, "打开PacketHelper时出错: ${e.message}")
+                    }
+                }
+            }
+        
+            override fun entry(classLoader: ClassLoader) {
+                // 添加这个实例到响应处理器列表中
+                moe.ono.hooks.base.api.QQMsgRespHandler.handlers.add(this)
+            }
+        }
