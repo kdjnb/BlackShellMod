@@ -103,7 +103,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
     override fun clickHandle(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间盲盒签卡","*QQ空间video卡")//, "方式二：还没写好"
+        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间盲盒签卡","*QQ空间video卡","*无tag图文")//, "方式二：还没写好"
         
         XPopup.Builder(fixContext)
             .asCenterList("选择卡片(带*的选项仅授权后可用)", options, OnSelectListener { position, text ->
@@ -126,6 +126,9 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
                     }
                     5 -> {
                         getQzoneCard2(context)
+                    }
+                    6 -> {
+                        noTagTuwen(context)
                     }
                 }
             })
@@ -588,6 +591,107 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
             .show()
 
     }
+    private fun noTagTuwen(context: Context) {
+        val fixContext = CommonContextWrapper.createAppCompatContext(context)
+        var peerid: String = getCurrentPeerID()
+        var rqunuin: String
+        var rtitle: String
+        var rdesc: String
+        var rcoverUrl: String
+        var rjumpUrl: String
+        var rver: String
+        if(readPassFromFile(context)==null){
+            Toasts.error(context, "hacker不让你用")
+            return
+        }
+        var rpeerid: String = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
+
+        // 第一步：获取音乐链接
+        XPopup.Builder(fixContext)
+            .asInputConfirm(
+                "发送无Tag图文卡片",
+                "请输入发送群号",
+                rpeerid,
+                object : OnInputConfirmListener {
+                    override fun onConfirm(qunuin: String?) {
+//                        if (qunuin.isNullOrEmpty()) {
+//                            rqunuin=
+//                        }
+                        rqunuin = qunuin?.takeIf { it.isNotEmpty() } ?: rpeerid
+                        XPopup.Builder(fixContext)
+                            .asInputConfirm(
+                                "发送无Tag图文卡片",
+                                "标题",
+                                "BlackShell Mod",
+                                object : OnInputConfirmListener {
+                                    override fun onConfirm(title: String?) {
+                                        rtitle = title?.takeIf { it.isNotEmpty() } ?: "BlackShell Mod"
+                                        XPopup.Builder(fixContext)
+                                            .asInputConfirm(
+                                                "发送无Tag图文卡片",
+                                                "请输入简介",
+                                                "BlackShellX.org",
+                                                object : OnInputConfirmListener {
+                                                    override fun onConfirm(desc: String?) {
+                                                        rdesc = desc?.takeIf { it.isNotEmpty() } ?: "BlackShellX.org"
+
+
+                                                        // 第四步：获取封面URL
+                                                        XPopup.Builder(fixContext)
+                                                            .asInputConfirm(
+                                                                "发送无Tag图文卡片",
+                                                                "请输入封面URL",
+                                                                "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0",
+                                                                object : OnInputConfirmListener {
+                                                                    override fun onConfirm(coverUrl: String?) {
+                                                                        rcoverUrl = coverUrl?.takeIf { it.isNotEmpty() } ?: "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0"
+
+
+                                                                        // 第五步：获取跳转链接
+                                                                        XPopup.Builder(fixContext)
+                                                                            .asInputConfirm(
+                                                                                "发送无Tag图文卡片",
+                                                                                "请输入跳转链接",
+                                                                                "https://c.safaa.cn/bs/ybcard_default.html",
+                                                                                object : OnInputConfirmListener {
+                                                                                    override fun onConfirm(jumpUrl: String?) {
+                                                                                        rjumpUrl = jumpUrl?.takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
+                                                                                        val pass = readPassFromFile(fixContext)
+                                                                                        if (pass.isNullOrEmpty()) {
+                                                                                            return
+                                                                                        }
+
+                                                                                        getNoTagTuwenPacket(
+                                                                                            context = fixContext,
+                                                                                            qunuin = rqunuin,
+                                                                                            pass = pass,
+                                                                                            title = rtitle,
+                                                                                            desc = rdesc,
+                                                                                            coverUrl = rcoverUrl,
+                                                                                            jumpUrl = rjumpUrl,
+                                                                                        ) { cmd, json ->
+                                                                                            sendPacket(cmd, json)
+                                                                                        }
+
+
+                                                                                    }
+                                                                                })
+                                                                            .show()
+                                                                    }
+                                                                })
+                                                            .show()
+                                                    }
+                                                })
+                                            .show()
+                                    }
+                                })
+                            .show()
+                    }
+                })
+            .show()
+
+
+    }
         private fun postRequestToAPI(context: Context, requestBody: Map<String, String>) {
             // 构建POST请求体
             val json = JSONObject(requestBody).toString()
@@ -809,6 +913,98 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
         val request = Request.Builder()
             .url("https://service.blackshellx.org/api/v1/getQianwenCardPB")
+            .post(body)
+            .build()
+
+        val client = OkHttpClient()
+
+        client.newCall(request).enqueue(object : Callback {
+
+            override fun onFailure(call: Call, e: IOException) {
+                SyncUtils.runOnUiThread {
+                    Toasts.error(context, "网络请求失败: ${e.message}")
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                try {
+                    if (!response.isSuccessful) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "请求失败: ${response.code}")
+                        }
+                        return
+                    }
+
+                    val responseBody = response.body?.string()
+                    if (responseBody.isNullOrEmpty()) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "空响应")
+                        }
+                        return
+                    }
+
+                    val jsonResponse = JSONObject(responseBody)
+
+                    if (jsonResponse.optInt("status") != 200) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(
+                                context,
+                                "API错误: ${jsonResponse.optString("msg")}"
+                            )
+                        }
+                        return
+                    }
+
+                    val cmd = jsonResponse.optString("cmd")
+                    val dataObj = jsonResponse.optJSONObject("data")
+
+                    if (cmd.isEmpty() || dataObj == null) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "返回数据不完整")
+                        }
+                        return
+                    }
+
+                    val dataJson = dataObj.toString()
+
+                    // ⭐ 这里才是正确的使用点
+                    SyncUtils.runOnUiThread {
+                        callback(cmd, dataJson)
+                    }
+
+                } catch (e: Exception) {
+                    SyncUtils.runOnUiThread {
+                        Toasts.error(context, "解析失败: ${e.message}")
+                    }
+                }
+            }
+        })
+    }
+    private fun getNoTagTuwenPacket(
+        context: Context,
+        qunuin: String,
+        pass: String,
+        title: String,
+        desc: String,
+        coverUrl: String,
+        jumpUrl: String,
+        callback: (cmd: String, json: String) -> Unit
+    ) {
+        val requestBody = mapOf(
+            "password" to pass,
+            "qunuin" to qunuin,
+            "title" to title,
+            "desc" to desc,
+            "coverUrl" to coverUrl,
+            "jumpUrl" to jumpUrl
+        )
+
+        val json = JSONObject(requestBody).toString()
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val body = json.toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url("https://service.blackshellx.org/api/v1/getNoTagTuwenPB")
             .post(body)
             .build()
 
@@ -1407,7 +1603,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
                                                                 "https://thirdqq.qlogo.cn/g?b=qq&nk="+QAppUtils.getCurrentUin().toString()+"&s=640",
                                                                 object : OnInputConfirmListener {
                                                                     override fun onConfirm(inputTagIcon: String?) {
-                                                                        tagIcon = inputTagIcon?.takeIf { it.isNotEmpty() } ?: "邀请你抽取AI盲盒签"
+                                                                        tagIcon = inputTagIcon?.takeIf { it.isNotEmpty() } ?: ("https://thirdqq.qlogo.cn/g?b=qq&nk="+QAppUtils.getCurrentUin().toString()+"&s=640")
                                                                         sendQzoneCardRequest2(context, tag, jumpUrl, preview, tagIcon)
                                                                     }
                                                                 })
