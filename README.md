@@ -2,6 +2,7 @@
     <h1> BlackShell Mod </h1>
     <h2> 我们跑路了，仓库已归档 </h2>
     <h3> 这一切都没有发生 </h3>
+    <h4> blackshellx.org域名将在2027.1.6到期 </h4>
 
 [![Telegram](https://img.shields.io/static/v1?label=Telegram&message=Channel&color=0088cc)](https://t.me/bsmodx)
 
