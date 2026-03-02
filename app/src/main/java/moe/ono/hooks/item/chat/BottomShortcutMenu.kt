@@ -27,6 +27,7 @@ import moe.ono.creator.GetChannelArkDialog
 import moe.ono.creator.JumpSchemeUriDialog
 import moe.ono.creator.PacketHelperDialog
 import moe.ono.creator.QQMessageTrackerDialog
+import moe.ono.dexkit.TargetManager
 import moe.ono.hooks.XHook
 import moe.ono.hooks._base.BaseClickableFunctionHookItem
 import moe.ono.hooks._core.annotation.HookItem
@@ -59,68 +60,61 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
 
     private fun hook() {
         try {
-            val method = XMethod.clz(Constants.CLAZZ_PANEL_ICON_LINEAR_LAYOUT).ret(
-                ImageView::class.java
-            ).ignoreParam().get()
+            if (ConfigManager.dGetInt(Constants.PrekCfgXXX + "bottom_shortcut_menu_mode", 0) == 1) {
+                val method = XMethod.clz(Constants.CLAZZ_PANEL_ICON_LINEAR_LAYOUT).ret(
+                    ImageView::class.java
+                ).ignoreParam().get()
 
-            hookAfter(method) { param: MethodHookParam ->
-                if (Session.getContact().chatType != ChatTypeConstants.C2C && Session.getContact().chatType != ChatTypeConstants.GROUP) {
-                    return@hookAfter
-                }
-
-                val imageView = param.result as ImageView
-
-                if (!this.isEnabled) return@hookAfter
-                if (ConfigManager.dGetInt(Constants.PrekCfgXXX + "bottom_shortcut_menu_mode", 0) == 0) {
-                    if ("拍照".contentEquals(imageView.contentDescription)) {
-                        imageView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-                            override fun onViewAttachedToWindow(v: View) {
-                                val parent = v.parent
-                                if (parent is ViewGroup) {
-                                    Logger.d(parent::class.java.name)
-
-                                    fun foundONO(view: ViewGroup) : Boolean {
-                                        for (i in 0 until view.childCount) {
-                                            val child = view.getChildAt(i)
-                                            if (child.contentDescription == "ONO") {
-                                                return true
-                                            }
-                                        }
-                                        return false
-                                    }
-
-                                    if (!foundONO(parent)) {
-                                        val onoImageView = ImageView(parent.context)
-                                        onoImageView.setImageResource(R.drawable.ic_ouo)
-                                        onoImageView.contentDescription = "BSM"
-
-                                        val layoutParams = LinearLayout.LayoutParams(0, (28.0f * parent.resources.displayMetrics.density + 0.5f).toInt())
-                                        layoutParams.weight = 1.0f
-                                        layoutParams.gravity = 16
-
-                                        onoImageView.layoutParams = layoutParams
-
-                                        onoImageView.setOnClickListener { view ->
-                                            val fixContext =
-                                                CommonContextWrapper.createAppCompatContext(imageView.context)
-                                            popMenu(fixContext, view)
-                                        }
-
-                                        parent.addView(onoImageView, 4)
-                                    }
-                                }
-                            }
-
-                            override fun onViewDetachedFromWindow(v: View) {
-                            }
-                        })
+                hookAfter(method) { param: MethodHookParam ->
+                    if (Session.getContact().chatType != ChatTypeConstants.C2C && Session.getContact().chatType != ChatTypeConstants.GROUP) {
+                        return@hookAfter
                     }
-                } else {
+
+                    val imageView = param.result as ImageView
+
+                    if (!this.isEnabled) return@hookAfter
                     if ("红包".contentEquals(imageView.contentDescription)) {
                         imageView.setOnLongClickListener { view ->
                             val fixContext = CommonContextWrapper.createAppCompatContext(imageView.context)
                             popMenu(fixContext, view)
                             true
+                        }
+                    }
+                }
+            } else {
+                val method = TargetManager.requireMethod(Constants.MethodCacheKey_ChatPanelBtn)
+                hookAfter(method) { param: MethodHookParam? ->
+                    val layout = param!!.thisObject as LinearLayout
+                    if (Session.getContact().chatType != ChatTypeConstants.C2C && Session.getContact().chatType != ChatTypeConstants.GROUP) return@hookAfter
+                    if (!this.isEnabled) return@hookAfter
+                    for (i in 0..<layout.childCount) {
+                        val child = layout.getChildAt(i)
+                        if (child is ImageView && child.contentDescription != null) {
+                            if ("泡泡".contentEquals(child.contentDescription)) {
+                                child.addOnAttachStateChangeListener(object :
+                                    View.OnAttachStateChangeListener {
+                                    private val ONO_TAG = "ono_image_tag"
+                                    override fun onViewAttachedToWindow(v: View) {
+                                        v.post {
+                                            val parent = v.parent as? ViewGroup ?: return@post
+
+                                            if ((0 until parent.childCount).any {
+                                                    parent.getChildAt(it).tag == ONO_TAG
+                                                }) return@post
+
+                                            val onoIcon = ImageView(v.context).apply {
+                                                tag = ONO_TAG
+                                                setOnClickListener { v ->
+                                                    popMenu(CommonContextWrapper.createAppCompatContext(v.context), view = v)
+                                                }
+                                            }
+
+                                            parent.addView(onoIcon, minOf(4, parent.childCount))
+                                        }
+                                    }
+                                    override fun onViewDetachedFromWindow(p0: View) {}
+                                })
+                            }
                         }
                     }
                 }
@@ -178,16 +172,16 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
             items.add("已读追踪")
         }
         if (getCookie) {
-            items.add("GetCookie")
+            items.add("获取 Cookie")
         }
         if (getBknByCookie) {
-            items.add("GetBknByCookie")
+            items.add("获取 Bkn")
         }
         items.add("发白字")
         items.add("发送位置卡片")
         items.add("发假位置共享")
         if (getChannelArk) {
-            items.add("GetChannelArk")
+            items.add("获取频道卡片")
         }
         if (jumpSchemeUri) {
             items.add("打开 Scheme 链接")
@@ -201,11 +195,6 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                 items.add(menu.menuName)
             }
         }
-
-//        // 添加发白字功能
-//        if (getItem(SendWhiteText::class.java).isEnabled) {
-//            items.add("发白字")
-//        }
 
         if (getItem(QQHookCodec::class.java).isEnabled) {
             if (!messageEncryptor) {
@@ -266,7 +255,7 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                             ).path, false
                         )
                     }
-                    "GetCookie" -> {
+                    "获取 Cookie" -> {
                         SyncUtils.runOnUiThread {
                             val builder = MaterialAlertDialogBuilder(
                                 CommonContextWrapper.createAppCompatContext(view.context)
@@ -291,7 +280,7 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                             builder.show()
                         }
                     }
-                    "GetBknByCookie" -> {
+                    "获取 Bkn" -> {
                         SyncUtils.runOnUiThread {
                             val builder = MaterialAlertDialogBuilder(CommonContextWrapper.createAppCompatContext(view.context))
 
@@ -312,7 +301,7 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                             builder.show()
                         }
                     }
-                    "GetChannelArk" -> {
+                    "获取频道卡片" -> {
                         SyncUtils.runOnUiThread { GetChannelArkDialog.createView(view.context) }
                     }
                     "打开 Scheme 链接" -> {
@@ -499,7 +488,7 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
             layout.addView(checkBox)
 
             val tips = listOf(
-                "点击聊天界面下方 ONO 图标调出菜单",
+                "点击聊天界面下方泡泡消息按钮调出菜单",
                 "长按聊天界面下方红包按钮调出菜单"
             )
             val currentIndex = ConfigManager.dGetInt(Constants.PrekCfgXXX + "bottom_shortcut_menu_mode", 0)
@@ -510,7 +499,7 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                 setPadding(0, 16, 0, 0)
             }
             val dropdown = AutoCompleteTextView(fixContext).apply {
-                val options = listOf("增加 ONO 图标", "红包")
+                val options = listOf("泡泡消息", "红包")
                 isFocusable = false
                 isCursorVisible = false
                 isLongClickable = false
