@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import kotlin.system.exitProcess
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -183,7 +184,6 @@ open class OUOSettingActivity : BaseActivity() {
 
         return true
     }
-
     class SettingsFragment : PreferenceFragmentCompat() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
@@ -221,6 +221,19 @@ open class OUOSettingActivity : BaseActivity() {
                 }
                 "github" -> {
                     jump(requireContext(), "https://github.com/kdjnb/BlackShellMod")
+                    return super.onPreferenceTreeClick(preference)
+                }
+                "stop" -> {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("确定关闭 QQ？")
+                        .setMessage("这会立即结束 QQ 进程。")
+                        .setPositiveButton("确定") { _, _ ->
+                            requireActivity().finishAffinity()
+                            android.os.Process.killProcess(android.os.Process.myPid())
+                            exitProcess(0)
+                        }
+                        .setNegativeButton("取消", null)
+                        .show()
                     return super.onPreferenceTreeClick(preference)
                 }
                 "build_time", "build_uuid", "version","prek_enable_log", "hook_priority","author" -> {

@@ -81,7 +81,12 @@
         <Preference
             android:title="我去不早说"
             app:key="author"
-            app:summary="By LIQ" />
+            app:summary="By 𝚊𝚠𝚊  部分卡片由𝓝𝓪𝓬𝓱𝓸提供" />
+
+        <Preference
+            android:title="强行停止QQ进程"
+            app:key="stop"
+            app:summary="点击强行停止QQ进程" />
 
         <Preference
             android:title="编译时间"
