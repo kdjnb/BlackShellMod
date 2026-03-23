@@ -1,8 +1,6 @@
 <div align="center">
     <h1> BlackShell Mod </h1>
-    <h2> 我们跑路了，仓库已归档 </h2>
-    <h3> 这一切都没有发生 </h3>
-    <h4> blackshellx.org域名将在2027.1.6到期 </h4>
+    <h2> 我们没跑路，保持基础维护 </h2>
 
 [![Telegram](https://img.shields.io/static/v1?label=Telegram&message=Channel&color=0088cc)](https://t.me/bsmodx)
 
@@ -85,7 +83,7 @@ The Ultimate QQ Mod
 
 # Support / 赞助
 
-### 请直接联系 [@bsmodxbot](https://t.me/bsmodxbot)
+### 请直接联系 [@awa6468](https://t.me/awa6468)
 
 - 开发者目前是学生，主要经济来源来自家庭支持，但业余活动仍需一定支出。您可以自由选择是否捐助。
 - 赞助完全自愿，赞助者不会获得任何特权，且不赞助的用户依然可以使用所有功能。
