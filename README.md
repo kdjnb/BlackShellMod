@@ -20,6 +20,8 @@ The Ultimate QQ Mod
 - Android >= `10.0`
 - QQ >= `9.0.71` （仅适配 QQNT，短期内不会适配 TIM）
 
+# 卡片功能授权码获取
+https://afdian.com/item/eb37256026a711f1bc0c52540025c377
 
 # Reference / 参考项目
 
