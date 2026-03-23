@@ -79,7 +79,7 @@
             app:key="version"
             app:summary="N/A" />
         <Preference
-            android:title="我去不早说"
+            android:title="迪克"
             app:key="author"
             app:summary="By 𝚊𝚠𝚊  部分卡片由𝓝𝓪𝓬𝓱𝓸提供" />
 
