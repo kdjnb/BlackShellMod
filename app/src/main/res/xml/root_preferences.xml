@@ -84,6 +84,11 @@
             app:summary="By 𝚊𝚠𝚊  部分卡片由𝓝𝓪𝓬𝓱𝓸提供" />
 
         <Preference
+            android:title="卡片功能授权码获取"
+            app:key="password"
+            app:summary="点击前往赞助网页" />
+
+        <Preference
             android:title="强行停止QQ进程"
             app:key="stop"
             app:summary="点击强行停止QQ进程" />

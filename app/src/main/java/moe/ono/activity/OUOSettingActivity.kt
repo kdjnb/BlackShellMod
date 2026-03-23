@@ -223,6 +223,10 @@ open class OUOSettingActivity : BaseActivity() {
                     jump(requireContext(), "https://github.com/kdjnb/BlackShellMod")
                     return super.onPreferenceTreeClick(preference)
                 }
+                "password" -> {
+                    jump(requireContext(), "https://4mc.top/hacker.html")
+                    return super.onPreferenceTreeClick(preference)
+                }
                 "stop" -> {
                     MaterialAlertDialogBuilder(requireContext())
                         .setTitle("确定关闭 QQ？")
