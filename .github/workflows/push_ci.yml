@@ -74,7 +74,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: ono-pr-apk
+          name: BlackShellMod-pr-apk
           path: app/build/outputs/apk/release/**/*.apk
           if-no-files-found: error
 
@@ -82,7 +82,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: ono-release-apk
+          name: BlackShellMod-release-apk
           path: app/build/outputs/apk/release/**/*.apk
           if-no-files-found: error
 
