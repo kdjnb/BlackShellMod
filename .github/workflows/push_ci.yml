@@ -100,7 +100,7 @@ jobs:
       - name: Download APK artifact
         uses: actions/download-artifact@v4
         with:
-          name: ono-release-apk
+          name: BlackShellMod-release-apk
           path: artifacts
 
       - name: Find APK file
