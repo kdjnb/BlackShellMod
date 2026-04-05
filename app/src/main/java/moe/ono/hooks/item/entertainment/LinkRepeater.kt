@@ -11,6 +11,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import moe.ono.R
 import moe.ono.bridge.ntapi.MsgServiceHelper
+import moe.ono.creator.PacketHelperDialog
 import moe.ono.hooks._base.BaseSwitchFunctionHookItem
 import moe.ono.hooks._core.annotation.HookItem
 import moe.ono.hooks._core.factory.HookItemFactory.getItem
@@ -27,7 +28,7 @@ import java.util.zip.Deflater
 
 @HookItem(
     path = "娱乐功能/链接复读",
-    description = "长按文字消息生成特定格式的消息并发送\n\n* 长按文字消息菜单中使用"
+    description = "长按文字消息生成链接总结格式的消息并发送\n\n* 长按文字消息菜单中使用"
 )
 class LinkRepeater : BaseSwitchFunctionHookItem(), OnMenuBuilder {
 
@@ -87,7 +88,7 @@ class LinkRepeater : BaseSwitchFunctionHookItem(), OnMenuBuilder {
         senderUin: Long,
         text: String
     ): String {
-        //嘿壳不要再逆向我了。。。。。
+        //嘿壳不要再逆向我了。。。。。好的开源了不用逆向了
         return """{"1":{"1":"blackshellx.org","12":{"14":{"1":"$senderNick","2":"$text","3":"https://q1.qlogo.cn/g?b=qq&nk=$senderUin&s=640"}}}}"""
     }
 
@@ -111,6 +112,15 @@ class LinkRepeater : BaseSwitchFunctionHookItem(), OnMenuBuilder {
                         Logger.e("SET_CONTENT_ERROR", "设置内容失败: ${e.message}")
                     }
                 }, 150) // 150ms延迟
+//                SyncUtils.runOnUiThread {
+//                    // 等待100ms后自动点击发送
+////                    Handler(Looper.getMainLooper()).postDelayed({
+////                        PacketHelperDialog.performAutoSend()
+////                    }, 100)
+//                    Handler(Looper.getMainLooper()).postDelayed({
+//                        PacketHelperDialog.performAutoSend(true)
+//                    }, 100)
+//                }
 
                 Logger.d("OPEN_PACKETHELPER", "已打开PacketHelper对话框")
             } else {
