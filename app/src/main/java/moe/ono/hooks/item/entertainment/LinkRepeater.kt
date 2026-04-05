@@ -28,7 +28,7 @@ import java.util.zip.Deflater
 
 @HookItem(
     path = "娱乐功能/链接复读",
-    description = "长按文字消息生成链接总结格式的消息并发送\n\n* 长按文字消息菜单中使用"
+    description = "长按文字消息生成链接标题简介格式的消息并发送\n\n* 长按文字消息菜单中使用"
 )
 class LinkRepeater : BaseSwitchFunctionHookItem(), OnMenuBuilder {
 
