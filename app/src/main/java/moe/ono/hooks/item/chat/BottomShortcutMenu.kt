@@ -39,6 +39,8 @@ import moe.ono.hooks.item.developer.JumpSchemeUri
 import moe.ono.hooks.item.developer.QQHookCodec
 import moe.ono.hooks.item.developer.TimestampTool
 import moe.ono.hooks.item.developer.QQPacketHelperEntry
+import moe.ono.hooks.item.entertainment.BigForward
+import moe.ono.hooks.item.entertainment.StealTraffic
 import moe.ono.hooks.item.sigma.QQMessageTracker
 import moe.ono.loader.hookapi.IShortcutMenu
 import moe.ono.reflex.XMethod
@@ -174,6 +176,12 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         val fakeLocationShare = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
             FakeLocationShare::class.java).path)
 
+        val stealTraffic = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
+            StealTraffic::class.java).path)
+
+        val bigForward = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
+            BigForward::class.java).path)
+
 
         val items = ArrayList<String>()
         if (qqPacketHelper) {
@@ -211,6 +219,12 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         }
         if (cardFunc) {
             items.add("卡片功能")
+        }
+        if (stealTraffic) {
+            items.add("偷流量")
+        }
+        if (bigForward) {
+            items.add("发大号聊天记录")
         }
 
         menus.forEach { menu ->
@@ -364,7 +378,20 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                         timestampTool.clickHandle(view.context)
                     }
                 }
+                    "偷流量" -> {
+                        val stealTraffic = getItem(StealTraffic::class.java)
+                        if (stealTraffic is IShortcutMenu) {
+                            stealTraffic.clickHandle(view.context)
+                        }
+                    }
+                    "发大号聊天记录" -> {
+                        val bigForward = getItem(BigForward::class.java)
+                        if (bigForward is IShortcutMenu) {
+                            bigForward.clickHandle(view.context)
+                        }
+                    }
                 }
+
             }
             .show()
     }

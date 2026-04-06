@@ -67,7 +67,7 @@ class SendWhiteText : BaseSwitchFunctionHookItem(), IShortcutMenu {
                 SyncUtils.runOnUiThread {
                     PacketHelperDialog.createView(null, context, jsonTemplate)
                     Handler(Looper.getMainLooper()).postDelayed({
-                        PacketHelperDialog.performAutoSend()
+                        PacketHelperDialog.performAutoSend(context)
                     }, 100)
                 }
             }

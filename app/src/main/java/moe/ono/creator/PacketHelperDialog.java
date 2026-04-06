@@ -775,6 +775,28 @@ public class PacketHelperDialog extends BottomPopupView {
         });
     }
 
+    // 设置发送类型为XML模式
+    public static void setSendTypeToXml() {
+        SyncUtils.runOnUiThread(() -> {
+            try {
+                if (mRgSendType != null) {
+                    mRgSendType.check(R.id.rb_xml);
+                }
+
+                if (editText != null) {
+                    editText.setHint("Xml...");
+                }
+
+                if (mRgSendBy != null) {
+                    mRgSendBy.setVisibility(View.GONE);
+                }
+
+            } catch (Exception e) {
+                Logger.e(e);
+            }
+        });
+    }
+
 
     public static void send_ark_msg(String text, ContactCompat contactCompat) throws JSONException {
         new JSONObject(text);
@@ -1196,9 +1218,8 @@ public class PacketHelperDialog extends BottomPopupView {
     }
 
     // 自动发送方法，用于发白字功能
-    public static void performAutoSend() {
-        // 由于这是静态方法，我们无法直接访问实例变量
-        // 所以我们使用全局引用关闭对话框
+    public static void performAutoSend(Context context) {
+        int chat_type = getCurrentChatType();
         SyncUtils.runOnUiThread(() -> {
             if (editText == null) {
                 Logger.e("PacketHelperDialog", "editText is null, cannot perform auto send");
@@ -1267,22 +1288,147 @@ public class PacketHelperDialog extends BottomPopupView {
                     return;
                 }
 
-                // protobuf类型 - 使用直接发送
-                if (!isJSON(text)) {
-                    Toasts.info(editText.getContext(), "无效的代码");
-                    return;
-                }
+                // protobuf
+                try {
+                    if (!isJSON(text)){
+                        Toasts.info(context, "无效的代码");
+                        return;
+                    }
 
-                int chat_type = getCurrentChatType();
-                if (chat_type != 1 && chat_type != 2) {
-                    Toasts.error(editText.getContext(), "失败");
-                    return;
-                }
+                    int rbSendBy = mRgSendBy.getCheckedRadioButtonId();
+                    if (chat_type != 1 && chat_type != 2) {
+                        Toasts.error(context, "失败");
+                        return;
+                    }
 
-                // 直接发送
-                QPacketHelperKt.sendMessage(text, getCurrentPeerID(), chat_type == 2, send_type, false, "");
-                
-                Toasts.success(editText.getContext(), "请求成功");
+                    if (rbSendBy == R.id.rb_send_by_directly) {
+                        QPacketHelperKt.sendMessage(text, peer, chatType == GROUP, send_type, isSendByLongmsg, originalPbContent);
+                        originalPbContent = "";
+                        isSendByLongmsg = false;
+                    } else if (rbSendBy == R.id.rb_send_by_longmsg) {
+                        String data = "{\n" +
+                                "  \"2\": {\n" +
+                                "    \"1\": \"MultiMsg\",\n" +
+                                "    \"2\": {\n" +
+                                "      \"1\": [\n" +
+                                "        {\n" +
+                                "          \"3\": {\n" +
+                                "            \"1\": {\n" +
+                                "              \"2\": " + text +
+                                "            }\n" +
+                                "          }\n" +
+                                "        }\n" +
+                                "      ]\n" +
+                                "    }\n" +
+                                "  }\n" +
+                                "}".trim();
+                        byte[] protoBytes = QPacketHelperKt.buildMessage(data);
+                        byte[] compressedData = compressData(protoBytes);
+
+                        long target = Long.parseLong(chatType == GROUP ? peer : getUinFromUid(peer));
+
+                        String json = "{\n" +
+                                "  \"2\": {\n" +
+                                "    \"1\": " + (chatType == C2C ? 1 : 3) + ",\n" +
+                                "    \"2\": {\n" +
+                                "      \"2\": "+ target +"\n" +
+                                "    },\n" +
+                                "    \"4\": \"hex->"+bytesToHex(compressedData)+"\"\n" +
+                                "  },\n" +
+                                "  \"15\": {\n" +
+                                "    \"1\": 4,\n" +
+                                "    \"2\": 2,\n" +
+                                "    \"3\": 9,\n" +
+                                "    \"4\": 0\n" +
+                                "  }\n" +
+                                "}".trim();
+
+                        Logger.d("ElementSender-send-by-longmsg", json);
+                        QPacketHelperKt.sendPacket("trpc.group.long_msg_interface.MsgService.SsoSendLongMsg", json);
+                    } else if (rbSendBy == R.id.rb_send_by_forwarding){
+                        String seqValue = etSeq.getText().toString().isEmpty() ? String.valueOf(ThreadLocalRandom.current().nextInt(0, 10000000)) : etSeq.getText().toString();
+                        String timestampValue = etTimestamp.getText().toString().isEmpty() ? String.valueOf(ThreadLocalRandom.current().nextInt(0, 100000)) : etTimestamp.getText().toString();
+
+                        String data = "{\"2\": {\n" +
+                                "  \"1\": \"MultiMsg\",\n" +
+                                "  \"2\": {\n" +
+                                "    \"1\": [\n" +
+                                "      {\n" +
+                                "        \"1\": {\n" +
+                                "          \"1\": "+etUin.getText()+",\n" +
+                                "          \"5\": {},\n" +
+                                "          \"6\": {},\n" +
+                                "          \"7\": {},\n" +
+                                "          \"8\": {\n" +
+                                "            \"1\": 10001,\n" +
+                                "            \"4\": \"@ouom_pub\",\n" +
+                                "            \"5\": 2\n" +
+                                "          }\n" +
+                                "        },\n" +
+                                "        \"2\": {\n" +
+                                "          \"1\": 82,\n" +
+                                "          \"2\": {},\n" +
+                                "          \"3\": {},\n" +
+                                "          \"4\": "+seqValue+",\n" +
+                                "          \"5\": "+timestampValue+",\n" +
+                                "          \"6\": "+ThreadLocalRandom.current().nextInt(0, 10000000)+",\n" +
+                                "          \"7\": 1,\n" +
+                                "          \"8\": 0,\n" +
+                                "          \"9\": 0,\n" +
+                                "          \"15\": {\n" +
+                                "            \"1\": 0,\n" +
+                                "            \"2\": 0,\n" +
+                                "            \"3\": 0,\n" +
+                                "            \"4\": \"\",\n" +
+                                "            \"5\": \"\"\n" +
+                                "          }\n" +
+                                "        },\n" +
+                                "        \"3\": {\n" +
+                                "          \"1\": {\n" +
+                                "            \"2\": " + text +
+                                "          }\n" +
+                                "        }\n" +
+                                "      }\n" +
+                                "    ]\n" +
+                                "  }\n" +
+                                "}}\n".trim();
+
+                        Logger.d("data", data);
+                        byte[] protoBytes = QPacketHelperKt.buildMessage(data);
+                        byte[] compressedData = compressData(protoBytes);
+
+                        long target = Long.parseLong(chatType == GROUP ? peer : getUinFromUid(peer));
+
+                        String json = "{\n" +
+                                "  \"2\": {\n" +
+                                "    \"1\": " + (chatType == C2C ? 1 : 3) + ",\n" +
+                                "    \"2\": {\n" +
+                                "      \"2\": "+ target +"\n" +
+                                "    },\n" +
+                                "    \"4\": \"hex->"+bytesToHex(compressedData)+"\"\n" +
+                                "  },\n" +
+                                "  \"15\": {\n" +
+                                "    \"1\": 4,\n" +
+                                "    \"2\": 2,\n" +
+                                "    \"3\": 9,\n" +
+                                "    \"4\": 0\n" +
+                                "  }\n" +
+                                "}".trim();
+
+                        Logger.d("ElementSender-send-by-forward", json);
+                        QPacketHelperKt.sendPacket("trpc.group.long_msg_interface.MsgService.SsoSendLongMsg", json);
+                    }
+                    Toasts.success(context, "请求成功");
+
+                    fadeOutAndClearBlur(decorView);
+                } catch (Exception e) {
+                    Logger.e("未适配的消息结构", e);
+                    MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
+                    builder.setTitle("未适配的消息结构，请联系开发者");
+                    builder.setMessage(e.toString());
+                    builder.show();
+                    Toasts.info(context, "未适配的消息结构，请联系开发者");
+                }
 
                 // 自动关闭对话框 - 使用XPopup的静态引用
                 dismissCurrentPopup();

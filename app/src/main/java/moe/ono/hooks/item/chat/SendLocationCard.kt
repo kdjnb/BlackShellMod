@@ -122,7 +122,7 @@ class SendLocationCard : BaseSwitchFunctionHookItem(), IShortcutMenu {
                         PacketHelperDialog.setSendTypeToArk()
                     }, 50)
                     Handler(Looper.getMainLooper()).postDelayed({
-                        PacketHelperDialog.performAutoSend()
+                        PacketHelperDialog.performAutoSend(context)
                     }, 100)
                 }
             }

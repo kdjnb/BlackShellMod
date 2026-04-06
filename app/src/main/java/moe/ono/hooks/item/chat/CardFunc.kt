@@ -103,7 +103,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
     override fun clickHandle(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间盲盒签卡","*QQ空间video卡","*无tag图文卡","*测测测","*新版报名卡")//, "方式二：还没写好"
+        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间盲盒签卡","*QQ空间video卡","*无tag图文卡","*测测测","*新版报名卡","*AI头像卡")//, "方式二：还没写好"
         
         XPopup.Builder(fixContext)
             .asCenterList("选择卡片(带*的选项仅授权后可用)", options, OnSelectListener { position, text ->
@@ -132,6 +132,9 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
                     }
                     8 -> {
                         teamupCard(context)
+                    }
+                    9 -> {
+                        aiAvatarCard(context)
                     }
                 }
             })
@@ -732,7 +735,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
                             PacketHelperDialog.setSendTypeToArk()
                             // 等待100ms后自动点击发送
                             Handler(Looper.getMainLooper()).postDelayed({
-                                PacketHelperDialog.performAutoSend()
+                                PacketHelperDialog.performAutoSend(context)
                             }, 100)
                         }
                     } catch (e: Exception) {
@@ -951,6 +954,194 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
         val request = Request.Builder()
             .url("https://service.blackshellx.org/api/v1/getTestCardPB")
+            .post(body)
+            .build()
+
+        val client = OkHttpClient()
+
+        client.newCall(request).enqueue(object : Callback {
+
+            override fun onFailure(call: Call, e: IOException) {
+                SyncUtils.runOnUiThread {
+                    Toasts.error(context, "网络请求失败: ${e.message}")
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                try {
+//                    if (!response.isSuccessful) {
+//                        SyncUtils.runOnUiThread {
+//                            Toasts.error(context, "请求失败: ${response.code}")
+//                        }
+//                        return
+//                    }
+
+                    val responseBody = response.body?.string()
+                    if (responseBody.isNullOrEmpty()) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "空响应")
+                        }
+                        return
+                    }
+
+                    val jsonResponse = JSONObject(responseBody)
+
+                    if (jsonResponse.optInt("status") != 200) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(
+                                context,
+                                "${jsonResponse.optString("msg")}"
+                            )
+                        }
+                        return
+                    }
+
+                    val cmd = jsonResponse.optString("cmd")
+                    val dataObj = jsonResponse.optJSONObject("data")
+
+                    if (cmd.isEmpty() || dataObj == null) {
+                        SyncUtils.runOnUiThread {
+                            Toasts.error(context, "返回数据不完整")
+                        }
+                        return
+                    }
+
+                    val dataJson = dataObj.toString()
+
+                    // ⭐ 这里才是正确的使用点
+                    SyncUtils.runOnUiThread {
+                        callback(cmd, dataJson)
+                    }
+
+                } catch (e: Exception) {
+                    SyncUtils.runOnUiThread {
+                        Toasts.error(context, "解析失败: ${e.message}")
+                    }
+                }
+            }
+        })
+    }
+
+    private fun aiAvatarCard(context: Context) {
+        val fixContext = CommonContextWrapper.createAppCompatContext(context)
+        val peerid: String = getCurrentPeerID()
+
+        if (readPassFromFile(context) == null) {
+            Toasts.error(context, "不对劲")
+            return
+        }
+
+        val rpeerid = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
+
+        fun createEdit(hint: String, default: String): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
+
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
+                })
+                addView(edit)
+            }
+        }
+
+        val etQunuin  = createEdit("发送群号", rpeerid)
+        val etTitle   = createEdit("标题", "BlackShell Mod")
+        val etDesc    = createEdit("简介", "AI头像卡片测试")
+        val etCover   = createEdit("封面URL", "https://qq-video.cdn-go.cn/url-resource/latest/defaultmode/ai_avatar/qq_avatar_ai_ark_img.png")
+        val etTag = createEdit("tag", "BlackShell Mod")
+        val etTagIcon = createEdit("tag图标", "https://qq-video.cdn-go.cn/url-resource/latest/defaultmode/ai_avatar/qq_icon_avatar_ai_ark.png")
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("群号", etQunuin))
+            addView(labeledRow("标题", etTitle))
+            addView(labeledRow("简介", etDesc))
+            addView(labeledRow("封面", etCover))
+            addView(labeledRow("tag", etTag))
+            addView(labeledRow("tag图标", etTagIcon))
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("发送AI头像卡片")
+            .setView(root)
+            .setPositiveButton("发送", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val rqunuin  = etQunuin.text.toString().takeIf  { it.isNotEmpty() } ?: rpeerid
+                val rtitle   = etTitle.text.toString().takeIf   { it.isNotEmpty() } ?: "BlackShell Mod"
+                val rdesc    = etDesc.text.toString().takeIf    { it.isNotEmpty() } ?: "AI头像卡片测试"
+                val rcoverUrl = etCover.text.toString().takeIf  { it.isNotEmpty() } ?: "https://qq-video.cdn-go.cn/url-resource/latest/defaultmode/ai_avatar/qq_avatar_ai_ark_img.png"
+                val rtag = etTag.text.toString().takeIf { it.isNotEmpty() } ?: "BlackShell Mod"
+                val rtagicon = etTagIcon.text.toString().takeIf { it.isNotEmpty() } ?: "https://qq-video.cdn-go.cn/url-resource/latest/defaultmode/ai_avatar/qq_icon_avatar_ai_ark.png"
+
+                val pass = readPassFromFile(fixContext)
+                if (pass.isNullOrEmpty()) return@setOnClickListener
+
+                getAiAvatarPacket(
+                    context = fixContext,
+                    pass = pass,
+                    qunuin = rqunuin,
+                    title = rtitle,
+                    desc = rdesc,
+                    coverUrl = rcoverUrl,
+                    tag = rtag,
+                    tagIcon = rtagicon
+                ) { cmd, json ->
+                    sendPacket(cmd, json)
+                }
+
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
+    }
+    private fun getAiAvatarPacket(
+        context: Context,
+        pass: String,
+        qunuin: String,
+        title: String,
+        desc: String,
+        coverUrl: String,
+        tag: String,
+        tagIcon: String,
+        callback: (cmd: String, json: String) -> Unit
+    ) {
+        val requestBody = mapOf(
+            "password" to pass,
+            "qunuin" to qunuin,
+            "title" to title,
+            "desc" to desc,
+            "coverUrl" to coverUrl,
+            "tag" to tag,
+            "tagIcon" to tagIcon
+        )
+
+        val json = JSONObject(requestBody).toString()
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val body = json.toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url("https://service.blackshellx.org/api/v1/getAiAvatarCardPB")
             .post(body)
             .build()
 
@@ -1633,7 +1824,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
                         PacketHelperDialog.setSendTypeToArk()
                         // 等待100ms后自动点击发送
                         Handler(Looper.getMainLooper()).postDelayed({
-                            PacketHelperDialog.performAutoSend()
+                            PacketHelperDialog.performAutoSend(context)
                         }, 100)
                     }
 
@@ -2071,7 +2262,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
                         PacketHelperDialog.setSendTypeToArk()
                         // 等待100ms后自动点击发送
                         Handler(Looper.getMainLooper()).postDelayed({
-                            PacketHelperDialog.performAutoSend()
+                            PacketHelperDialog.performAutoSend(context)
                         }, 100)
                     } catch (e: Exception) {
                         Toasts.error(context, "打开PacketHelper时出错: ${e.message}")

@@ -163,7 +163,7 @@ class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
                                             
                                             // Wait 100ms then auto-send
                                             Handler(Looper.getMainLooper()).postDelayed({
-                                                PacketHelperDialog.performAutoSend()
+                                                PacketHelperDialog.performAutoSend(context)
                                             }, 100)
                                         } else {
                                             Logger.e("SuperQQShowConverter", "无法提取完整的d1, d2, d3数据，使用默认模板")
@@ -173,7 +173,7 @@ class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
                                             PacketHelperDialog.createView(null, context, newJson)
                                             
                                             Handler(Looper.getMainLooper()).postDelayed({
-                                                PacketHelperDialog.performAutoSend()
+                                                PacketHelperDialog.performAutoSend(context)
                                             }, 100)
                                         }
                                     }
@@ -212,7 +212,7 @@ class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
                                             
                                             // Wait 100ms then auto-send
                                             Handler(Looper.getMainLooper()).postDelayed({
-                                                PacketHelperDialog.performAutoSend()
+                                                PacketHelperDialog.performAutoSend(context)
                                             }, 100)
                                         } else {
                                             Logger.e("SuperQQShowConverter", "无法提取完整的d1, d2, d3数据，使用默认AI表情模板")
@@ -222,7 +222,7 @@ class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
                                             PacketHelperDialog.createView(null, context, newJson)
                                             
                                             Handler(Looper.getMainLooper()).postDelayed({
-                                                PacketHelperDialog.performAutoSend()
+                                                PacketHelperDialog.performAutoSend(context)
                                             }, 100)
                                         }
                                     }
