@@ -37,6 +37,7 @@ import moe.ono.hooks.item.developer.GetBknByCookie
 import moe.ono.hooks.item.developer.GetCookie
 import moe.ono.hooks.item.developer.JumpSchemeUri
 import moe.ono.hooks.item.developer.QQHookCodec
+import moe.ono.hooks.item.developer.TimestampTool
 import moe.ono.hooks.item.developer.QQPacketHelperEntry
 import moe.ono.hooks.item.sigma.QQMessageTracker
 import moe.ono.loader.hookapi.IShortcutMenu
@@ -161,6 +162,9 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         val cardFunc = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
             CardFunc::class.java).path)
 
+        val timestampTool = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
+            TimestampTool::class.java).path)
+
         val items = ArrayList<String>()
         if (qqPacketHelper) {
             items.add("QQPacketHelper")
@@ -176,6 +180,9 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         }
         if (getBknByCookie) {
             items.add("获取 Bkn")
+        }
+        if (timestampTool) {
+            items.add("Timestamp Tool")
         }
         items.add("发白字")
         items.add("发送位置卡片")
@@ -335,8 +342,12 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                             cardFunc.clickHandle(view.context)
                         }
                    }
-
-
+                    "Timestamp Tool" -> {
+                    val timestampTool = getItem(TimestampTool::class.java)
+                    if (timestampTool is IShortcutMenu) {
+                        timestampTool.clickHandle(view.context)
+                    }
+                }
                 }
             }
             .show()
