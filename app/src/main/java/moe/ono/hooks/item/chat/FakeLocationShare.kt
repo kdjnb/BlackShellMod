@@ -13,13 +13,14 @@ import moe.ono.ui.CommonContextWrapper
 import moe.ono.util.SyncUtils
 import android.os.Handler
 import android.os.Looper
+import moe.ono.hooks._base.BaseSwitchFunctionHookItem
 
 @SuppressLint("DiscouragedApi")
 @HookItem(
     path = "聊天与消息/发假位置共享",
     description = "发送假位置共享消息，出现在快捷菜单中"
 )
-class FakeLocationShare : BaseClickableFunctionHookItem(), IShortcutMenu {
+class FakeLocationShare : BaseSwitchFunctionHookItem(), IShortcutMenu {
 
     override fun isAdd(): Boolean {
         return this.isEnabled
@@ -29,22 +30,36 @@ class FakeLocationShare : BaseClickableFunctionHookItem(), IShortcutMenu {
         get() = "发假位置共享"
 
     override fun clickHandle(context: Context) {
-        // 创建输入框弹窗，获取用户输入的文字
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "发假位置共享",
-                "请输入位置名称",
-                "",
-                object : OnInputConfirmListener {
-                    override fun onConfirm(inputText: String?) {
-                        if (inputText.isNullOrEmpty()) {
-                            Toasts.error(context, "请输入位置名称")
-                            return
-                        }
 
-                        // 构造JSON数据
-                        val jsonTemplate = """{
+        val etText = android.widget.EditText(fixContext).apply {
+            hint = "位置名称"
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(etText)
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("发假位置共享")
+            .setView(root)
+            .setPositiveButton("发送", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val inputText = etText.text.toString().also {
+                    if (it.isEmpty()) { Toasts.error(context, "请输入位置名称"); return@setOnClickListener }
+                }
+
+                val jsonTemplate = """{
     "53": {
         "1": 31,
         "2": {
@@ -54,19 +69,18 @@ class FakeLocationShare : BaseClickableFunctionHookItem(), IShortcutMenu {
     }
 }"""
 
-                        // 启动PacketHelper并填入构造好的JSON
-                        SyncUtils.runOnUiThread {
-                            PacketHelperDialog.createView(null, context, jsonTemplate)
+                dialog.dismiss()
 
-                            // 等待100ms后自动点击发送
-                            Handler(Looper.getMainLooper()).postDelayed({
-                                PacketHelperDialog.performAutoSend()
-                            }, 100)
-                        }
-                    }
+                SyncUtils.runOnUiThread {
+                    PacketHelperDialog.createView(null, context, jsonTemplate)
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        PacketHelperDialog.performAutoSend()
+                    }, 100)
                 }
-            )
-            .show()
+            }
+        }
+
+        dialog.show()
     }
 
     override fun entry(classLoader: ClassLoader) {

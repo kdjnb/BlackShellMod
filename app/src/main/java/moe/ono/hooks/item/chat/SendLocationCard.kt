@@ -8,6 +8,7 @@ import com.lxj.xpopup.XPopup
 import com.lxj.xpopup.interfaces.OnInputConfirmListener
 import moe.ono.creator.PacketHelperDialog
 import moe.ono.hooks._base.BaseClickableFunctionHookItem
+import moe.ono.hooks._base.BaseSwitchFunctionHookItem
 import moe.ono.hooks._core.annotation.HookItem
 import moe.ono.hooks.base.util.Toasts
 import moe.ono.loader.hookapi.IShortcutMenu
@@ -20,7 +21,7 @@ import java.lang.Exception
     path = "聊天与消息/发送位置卡片",
     description = "发送位置卡片消息，出现在快捷菜单中"
 )
-class SendLocationCard : BaseClickableFunctionHookItem(), IShortcutMenu {
+class SendLocationCard : BaseSwitchFunctionHookItem(), IShortcutMenu {
 
     override fun isAdd(): Boolean {
         return this.isEnabled
@@ -30,35 +31,61 @@ class SendLocationCard : BaseClickableFunctionHookItem(), IShortcutMenu {
         get() = "发送位置卡片"
 
     override fun clickHandle(context: Context) {
-        // 创建输入框弹窗，获取位置标题和位置简介
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "发送位置卡片",
-                "请输入位置标题",
-                "",
-                object : OnInputConfirmListener {
-                    override fun onConfirm(title: String?) {
-                        if (title.isNullOrEmpty()) {
-                            Toasts.error(context, "请输入位置标题")
-                            return
-                        }
 
-                        // 创建输入框弹窗，获取位置简介
-                        XPopup.Builder(fixContext)
-                            .asInputConfirm(
-                                "发送位置卡片",
-                                "请输入位置简介",
-                                "",
-                                object : OnInputConfirmListener {
-                                    override fun onConfirm(desc: String?) {
-                                        if (desc.isNullOrEmpty()) {
-                                            Toasts.error(context, "请输入位置简介")
-                                            return
-                                        }
+        fun createEdit(hint: String, default: String = ""): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
 
-                                        // 构造位置卡片JSON模板
-                                        val locationCardTemplate = """{
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
+                })
+                addView(edit)
+            }
+        }
+
+        val etTitle = createEdit("位置标题")
+        val etDesc  = createEdit("位置简介")
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("标题", etTitle))
+            addView(labeledRow("简介", etDesc))
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("发送位置卡片")
+            .setView(root)
+            .setPositiveButton("发送", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val title = etTitle.text.toString().also {
+                    if (it.isEmpty()) { Toasts.error(context, "请输入位置标题"); return@setOnClickListener }
+                }
+                val desc = etDesc.text.toString().also {
+                    if (it.isEmpty()) { Toasts.error(context, "请输入位置简介"); return@setOnClickListener }
+                }
+
+                val locationCardTemplate = """{
     "app": "com.tencent.map",
     "config": {
         "autosize": false,
@@ -87,28 +114,21 @@ class SendLocationCard : BaseClickableFunctionHookItem(), IShortcutMenu {
     "view": "LocationShare"
 }"""
 
-                                        // 启动PacketHelper并填入位置卡片JSON
-                                        SyncUtils.runOnUiThread {
-                                            PacketHelperDialog.createView(null, context, locationCardTemplate)
-                                            
-                                            // 稍等UI初始化后切换到ARK模式
-                                            Handler(Looper.getMainLooper()).postDelayed({
-                                                PacketHelperDialog.setSendTypeToArk()
-                                            }, 50)
+                dialog.dismiss()
 
-                                            // 100ms后自动点击发送按钮
-                                            Handler(Looper.getMainLooper()).postDelayed({
-                                                PacketHelperDialog.performAutoSend()
-                                            }, 100)
-                                        }
-                                    }
-                                }
-                            )
-                            .show()
-                    }
+                SyncUtils.runOnUiThread {
+                    PacketHelperDialog.createView(null, context, locationCardTemplate)
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        PacketHelperDialog.setSendTypeToArk()
+                    }, 50)
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        PacketHelperDialog.performAutoSend()
+                    }, 100)
                 }
-            )
-            .show()
+            }
+        }
+
+        dialog.show()
     }
 
     override fun entry(classLoader: ClassLoader) {

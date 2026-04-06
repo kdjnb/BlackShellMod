@@ -165,6 +165,16 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         val timestampTool = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
             TimestampTool::class.java).path)
 
+        val sendLocationCard = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
+            SendLocationCard::class.java).path)
+
+        val sendWhiteText = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
+            SendWhiteText::class.java).path)
+
+        val fakeLocationShare = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
+            FakeLocationShare::class.java).path)
+
+
         val items = ArrayList<String>()
         if (qqPacketHelper) {
             items.add("QQPacketHelper")
@@ -184,9 +194,15 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         if (timestampTool) {
             items.add("Timestamp Tool")
         }
-        items.add("发白字")
-        items.add("发送位置卡片")
-        items.add("发假位置共享")
+        if (sendWhiteText) {
+            items.add("发白字")
+        }
+        if (sendLocationCard) {
+            items.add("发送位置卡片")
+        }
+        if (fakeLocationShare) {
+            items.add("发假位置共享")
+        }
         if (getChannelArk) {
             items.add("获取频道卡片")
         }
