@@ -18,7 +18,7 @@ import moe.ono.hooks._base.BaseSwitchFunctionHookItem
 @SuppressLint("DiscouragedApi")
 @HookItem(
     path = "聊天与消息/发假位置共享",
-    description = "发送假位置共享消息，出现在快捷菜单中"
+    description = "发送假位置共享消息\n* 需在 快捷菜单 中使用"
 )
 class FakeLocationShare : BaseSwitchFunctionHookItem(), IShortcutMenu {
 
