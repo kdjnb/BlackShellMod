@@ -140,105 +140,119 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
     private fun sendMusicCardByAPI(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        
-        // 第一步：获取音乐链接
-        XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "发送音乐卡片",
-                "请输入歌曲链接",
-                "",
-                object : OnInputConfirmListener {
-                    override fun onConfirm(musicUrl: String?) {
-                        if (musicUrl.isNullOrEmpty()) {
-                            Toasts.error(context, "请输入歌曲链接")
-                            return
-                        }
 
-                        // 第二步：获取歌名
-                        XPopup.Builder(fixContext)
-                            .asInputConfirm(
-                                "发送音乐卡片",
-                                "请输入歌名",
-                                "",
-                                object : OnInputConfirmListener {
-                                    override fun onConfirm(songName: String?) {
-                                        if (songName.isNullOrEmpty()) {
-                                            Toasts.error(context, "请输入歌名")
-                                            return
-                                        }
+        fun createEdit(hint: String, default: String = ""): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
 
-                                        // 第三步：获取歌手
-                                        XPopup.Builder(fixContext)
-                                            .asInputConfirm(
-                                                "发送音乐卡片",
-                                                "请输入歌手",
-                                                "",
-                                                object : OnInputConfirmListener {
-                                                    override fun onConfirm(singer: String?) {
-                                                        if (singer.isNullOrEmpty()) {
-                                                            Toasts.error(context, "请输入歌手")
-                                                            return
-                                                        }
-
-                                                        // 第四步：获取封面URL
-                                                        XPopup.Builder(fixContext)
-                                                            .asInputConfirm(
-                                                                "发送音乐卡片",
-                                                                "请输入封面URL",
-                                                                "",
-                                                                object : OnInputConfirmListener {
-                                                                    override fun onConfirm(coverUrl: String?) {
-                                                                        if (coverUrl.isNullOrEmpty()) {
-                                                                            Toasts.error(context, "请输入封面URL")
-                                                                            return
-                                                                        }
-
-                                                                        // 第五步：获取跳转链接
-                                                                        XPopup.Builder(fixContext)
-                                                                            .asInputConfirm(
-                                                                                "发送音乐卡片",
-                                                                                "请输入跳转链接",
-                                                                                "",
-                                                                                object : OnInputConfirmListener {
-                                                                                    override fun onConfirm(jumpUrl: String?) {
-                                                                                        if (jumpUrl.isNullOrEmpty()) {
-                                                                                            Toasts.error(context, "请输入跳转链接")
-                                                                                            return
-                                                                                        }
-
-                                                                                        // 第六步：选择格式
-                                                                                        val formats = arrayOf("qq", "163", "kugou", "kuwo", "migu", "mihoyo", "kugoulite", "bodian", "baidu", "miui", "kuan", "qidianskland", "bilibili")
-                                                                                        XPopup.Builder(fixContext)
-                                                                                            .asCenterList("选择格式", formats, OnSelectListener { position, format ->
-                                                                                                // 构造请求参数
-                                                                                                val requestBody = mapOf(
-                                                                                                    "url" to musicUrl,
-                                                                                                    "song" to songName,
-                                                                                                    "singer" to singer,
-                                                                                                    "cover" to coverUrl,
-                                                                                                    "jump" to jumpUrl,
-                                                                                                    "format" to format
-                                                                                                )
-
-                                                                                                // 发送POST请求到API
-                                                                                                postRequestToAPI(context, requestBody)
-                                                                                            })
-                                                                                            .show()
-                                                                                    }
-                                                                                })
-                                                                            .show()
-                                                                    }
-                                                                })
-                                                            .show()
-                                                    }
-                                                })
-                                            .show()
-                                    }
-                                })
-                            .show()
-                    }
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
                 })
-            .show()
+                addView(edit)
+            }
+        }
+
+        val formats = arrayOf("qq", "163", "kugou", "kuwo", "migu", "mihoyo", "kugoulite",
+            "bodian", "baidu", "miui", "kuan", "qidianskland", "bilibili")
+
+        val etMusicUrl = createEdit("歌曲链接")
+        val etSongName = createEdit("歌名")
+        val etSinger   = createEdit("歌手")
+        val etCover    = createEdit("封面URL")
+        val etJumpUrl  = createEdit("跳转链接")
+
+        // 格式选择 Spinner
+        val spinner = android.widget.Spinner(fixContext).apply {
+            adapter = android.widget.ArrayAdapter(
+                fixContext,
+                android.R.layout.simple_spinner_dropdown_item,
+                formats
+            )
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        val spinnerRow = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            setPadding(0, 8, 0, 8)
+            addView(android.widget.TextView(fixContext).apply {
+                text = "格式"
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                ).also { it.marginEnd = 16 }
+            })
+            addView(spinner)
+        }
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("歌曲链接", etMusicUrl))
+            addView(labeledRow("歌名", etSongName))
+            addView(labeledRow("歌手", etSinger))
+            addView(labeledRow("封面", etCover))
+            addView(labeledRow("跳转", etJumpUrl))
+            addView(spinnerRow)
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("发送音乐卡片")
+            .setView(root)
+            .setPositiveButton("发送", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val musicUrl = etMusicUrl.text.toString().also {
+                    if (it.isEmpty()) { Toasts.error(context, "请输入歌曲链接"); return@setOnClickListener }
+                }
+                val songName = etSongName.text.toString().also {
+                    if (it.isEmpty()) { Toasts.error(context, "请输入歌名"); return@setOnClickListener }
+                }
+                val singer = etSinger.text.toString().also {
+                    if (it.isEmpty()) { Toasts.error(context, "请输入歌手"); return@setOnClickListener }
+                }
+                val coverUrl = etCover.text.toString().also {
+                    if (it.isEmpty()) { Toasts.error(context, "请输入封面URL"); return@setOnClickListener }
+                }
+                val jumpUrl = etJumpUrl.text.toString().also {
+                    if (it.isEmpty()) { Toasts.error(context, "请输入跳转链接"); return@setOnClickListener }
+                }
+                val format = spinner.selectedItem.toString()
+
+                val requestBody = mapOf(
+                    "url"    to musicUrl,
+                    "song"   to songName,
+                    "singer" to singer,
+                    "cover"  to coverUrl,
+                    "jump"   to jumpUrl,
+                    "format" to format
+                )
+
+                postRequestToAPI(context, requestBody)
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
     }
     private fun readPassFromFile(context: Context): String? {
         writeDebugLog("开始读取授权码文件")
@@ -356,344 +370,278 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
     private fun yuanbaoCard(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        var peerid: String = getCurrentPeerID()
-        var rqunuin: String
-        var rtitle: String
-        var rdesc: String
-        var rcoverUrl: String
-        var rjumpUrl: String
-        var rver: String
-        if(readPassFromFile(context)==null){
+        val peerid: String = getCurrentPeerID()
+
+        if (readPassFromFile(context) == null) {
             Toasts.error(context, "不对劲")
             return
         }
 
-        var rpeerid: String = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
+        val rpeerid = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
 
-        // 第一步：获取音乐链接
-        XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "发送元宝卡片",
-                "请输入发送群号",
-                rpeerid,
-                object : OnInputConfirmListener {
-                    override fun onConfirm(qunuin: String?) {
-//                        if (qunuin.isNullOrEmpty()) {
-//                            rqunuin=
-//                        }
-                        rqunuin = qunuin?.takeIf { it.isNotEmpty() } ?: rpeerid
+        fun createEdit(hint: String, default: String): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
 
-                        // 第二步：获取标题
-                        XPopup.Builder(fixContext)
-                            .asInputConfirm(
-                                "发送元宝卡片",
-                                "标题",
-                                "BlackShell Mod",
-                                object : OnInputConfirmListener {
-                                    override fun onConfirm(title: String?) {
-                                        rtitle = title?.takeIf { it.isNotEmpty() } ?: "BlackShell Mod"
-
-
-                                        // 第三步：获取歌手
-                                        XPopup.Builder(fixContext)
-                                            .asInputConfirm(
-                                                "发送元宝卡片",
-                                                "请输入简介",
-                                                "元宝已被BlackShellX.org严肃嘿入",
-                                                object : OnInputConfirmListener {
-                                                    override fun onConfirm(desc: String?) {
-                                                        rdesc = desc?.takeIf { it.isNotEmpty() } ?: "元宝已被BlackShellX.org严肃嘿入"
-
-
-                                                        // 第四步：获取封面URL
-                                                        XPopup.Builder(fixContext)
-                                                            .asInputConfirm(
-                                                                "发送元宝卡片",
-                                                                "请输入封面URL",
-                                                                "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0",
-                                                                object : OnInputConfirmListener {
-                                                                    override fun onConfirm(coverUrl: String?) {
-                                                                        rcoverUrl = coverUrl?.takeIf { it.isNotEmpty() } ?: "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0"
-
-
-                                                                        // 第五步：获取跳转链接
-                                                                        XPopup.Builder(fixContext)
-                                                                            .asInputConfirm(
-                                                                                "发送元宝卡片",
-                                                                                "请输入跳转链接",
-                                                                                "https://c.safaa.cn/bs/ybcard_default.html",
-                                                                                object : OnInputConfirmListener {
-                                                                                    override fun onConfirm(jumpUrl: String?) {
-                                                                                        rjumpUrl = jumpUrl?.takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
-                                                                                        XPopup.Builder(fixContext)
-                                                                                            .asInputConfirm(
-                                                                                                "发送元宝卡片",
-                                                                                                "*请输入ver\n填你自己版本",
-                                                                                                "9.2.27",
-                                                                                                object : OnInputConfirmListener {
-                                                                                                    override fun onConfirm(ver: String?) {
-                                                                                                        rver = ver?.takeIf { it.isNotEmpty() } ?: "9.2.27"
-                                                                                                        val pass = readPassFromFile(fixContext)
-                                                                                                        if (pass.isNullOrEmpty()) {
-                                                                                                            return
-                                                                                                        }
-
-                                                                                                        getYuanbaoPacket(
-                                                                                                            context = fixContext,
-                                                                                                            pass = pass,
-                                                                                                            qunuin = rqunuin,
-                                                                                                            title = rtitle,
-                                                                                                            desc = rdesc,
-                                                                                                            coverUrl = rcoverUrl,
-                                                                                                            jumpUrl = rjumpUrl,
-                                                                                                            ver = rver
-                                                                                                        ) { cmd, json ->
-                                                                                                            sendPacket(cmd, json)
-                                                                                                        }
-
-
-                                                                                                    }
-                                                                                                })
-                                                                                            .show()
-
-
-                                                                                    }
-                                                                                })
-                                                                            .show()
-                                                                    }
-                                                                })
-                                                            .show()
-                                                    }
-                                                })
-                                            .show()
-                                    }
-                                })
-                            .show()
-                    }
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
                 })
-            .show()
+                addView(edit)
+            }
+        }
 
+        val etQunuin  = createEdit("发送群号", rpeerid)
+        val etTitle   = createEdit("标题", "BlackShell Mod")
+        val etDesc    = createEdit("简介", "元宝已被BlackShellX.org严肃嘿入")
+        val etCover   = createEdit("封面URL", "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0")
+        val etJumpUrl = createEdit("跳转链接", "https://c.safaa.cn/bs/ybcard_default.html")
+        val etVer     = createEdit("ver（填你自己版本）", "9.2.66")
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("群号", etQunuin))
+            addView(labeledRow("标题", etTitle))
+            addView(labeledRow("简介", etDesc))
+            addView(labeledRow("封面", etCover))
+            addView(labeledRow("跳转", etJumpUrl))
+            addView(labeledRow("ver", etVer))
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("发送元宝卡片")
+            .setView(root)
+            .setPositiveButton("发送", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val rqunuin   = etQunuin.text.toString().takeIf  { it.isNotEmpty() } ?: rpeerid
+                val rtitle    = etTitle.text.toString().takeIf   { it.isNotEmpty() } ?: "BlackShell Mod"
+                val rdesc     = etDesc.text.toString().takeIf    { it.isNotEmpty() } ?: "元宝已被BlackShellX.org严肃嘿入"
+                val rcoverUrl = etCover.text.toString().takeIf   { it.isNotEmpty() } ?: "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0"
+                val rjumpUrl  = etJumpUrl.text.toString().takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
+                val rver      = etVer.text.toString().takeIf     { it.isNotEmpty() } ?: "9.2.66"
+
+                val pass = readPassFromFile(fixContext)
+                if (pass.isNullOrEmpty()) return@setOnClickListener
+
+                getYuanbaoPacket(
+                    context = fixContext,
+                    pass = pass,
+                    qunuin = rqunuin,
+                    title = rtitle,
+                    desc = rdesc,
+                    coverUrl = rcoverUrl,
+                    jumpUrl = rjumpUrl,
+                    ver = rver
+                ) { cmd, json ->
+                    sendPacket(cmd, json)
+                }
+
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
     }
     private fun QianwenCard(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        var peerid: String = getCurrentPeerID()
-        var rqunuin: String
-        var rtitle: String
-        var rdesc: String
-        var rcoverUrl: String
-        var rjumpUrl: String
-        var rver: String
-        if(readPassFromFile(context)==null){
+        val peerid: String = getCurrentPeerID()
+
+        if (readPassFromFile(context) == null) {
             Toasts.error(context, "hacker不让你用")
             return
         }
 
-        var rpeerid: String = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
+        val rpeerid = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
 
-        // 第一步：获取音乐链接
-        XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "发送千问卡片",
-                "请输入发送群号",
-                rpeerid,
-                object : OnInputConfirmListener {
-                    override fun onConfirm(qunuin: String?) {
-//                        if (qunuin.isNullOrEmpty()) {
-//                            rqunuin=
-//                        }
-                        rqunuin = qunuin?.takeIf { it.isNotEmpty() } ?: rpeerid
+        fun createEdit(hint: String, default: String): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
 
-                        // 第二步：获取标题
-                        XPopup.Builder(fixContext)
-                            .asInputConfirm(
-                                "发送千问卡片",
-                                "标题",
-                                "BlackShell Mod",
-                                object : OnInputConfirmListener {
-                                    override fun onConfirm(title: String?) {
-                                        rtitle = title?.takeIf { it.isNotEmpty() } ?: "BlackShell Mod"
-
-
-                                        // 第三步：获取歌手
-                                        XPopup.Builder(fixContext)
-                                            .asInputConfirm(
-                                                "发送千问卡片",
-                                                "请输入简介",
-                                                "千问已被BlackShellX.org严肃嘿入",
-                                                object : OnInputConfirmListener {
-                                                    override fun onConfirm(desc: String?) {
-                                                        rdesc = desc?.takeIf { it.isNotEmpty() } ?: "千问已被BlackShellX.org严肃嘿入"
-
-
-                                                        // 第四步：获取封面URL
-                                                        XPopup.Builder(fixContext)
-                                                            .asInputConfirm(
-                                                                "发送千问卡片",
-                                                                "请输入封面URL",
-                                                                "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0",
-                                                                object : OnInputConfirmListener {
-                                                                    override fun onConfirm(coverUrl: String?) {
-                                                                        rcoverUrl = coverUrl?.takeIf { it.isNotEmpty() } ?: "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0"
-
-
-                                                                        // 第五步：获取跳转链接
-                                                                        XPopup.Builder(fixContext)
-                                                                            .asInputConfirm(
-                                                                                "发送千问卡片",
-                                                                                "请输入跳转链接",
-                                                                                "https://c.safaa.cn/bs/ybcard_default.html",
-                                                                                object : OnInputConfirmListener {
-                                                                                    override fun onConfirm(jumpUrl: String?) {
-                                                                                        rjumpUrl = jumpUrl?.takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
-                                                                                        XPopup.Builder(fixContext)
-                                                                                            .asInputConfirm(
-                                                                                                "发送千问卡片",
-                                                                                                "*请输入ver\n填你自己版本",
-                                                                                                "9.2.27",
-                                                                                                object : OnInputConfirmListener {
-                                                                                                    override fun onConfirm(ver: String?) {
-                                                                                                        rver = ver?.takeIf { it.isNotEmpty() } ?: "9.2.27"
-                                                                                                        val pass = readPassFromFile(fixContext)
-                                                                                                        if (pass.isNullOrEmpty()) {
-                                                                                                            return
-                                                                                                        }
-
-                                                                                                        getQianwenPacket(
-                                                                                                            context = fixContext,
-                                                                                                            pass = pass,
-                                                                                                            qunuin = rqunuin,
-                                                                                                            title = rtitle,
-                                                                                                            desc = rdesc,
-                                                                                                            coverUrl = rcoverUrl,
-                                                                                                            jumpUrl = rjumpUrl,
-                                                                                                            ver = rver
-                                                                                                        ) { cmd, json ->
-                                                                                                            sendPacket(cmd, json)
-                                                                                                        }
-
-
-                                                                                                    }
-                                                                                                })
-                                                                                            .show()
-
-
-                                                                                    }
-                                                                                })
-                                                                            .show()
-                                                                    }
-                                                                })
-                                                            .show()
-                                                    }
-                                                })
-                                            .show()
-                                    }
-                                })
-                            .show()
-                    }
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
                 })
-            .show()
+                addView(edit)
+            }
+        }
 
+        val etQunuin  = createEdit("发送群号", rpeerid)
+        val etTitle   = createEdit("标题", "BlackShell Mod")
+        val etDesc    = createEdit("简介", "千问已被BlackShellX.org严肃嘿入")
+        val etCover   = createEdit("封面URL", "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0")
+        val etJumpUrl = createEdit("跳转链接", "https://c.safaa.cn/bs/ybcard_default.html")
+        val etVer     = createEdit("ver（填你自己版本）", "9.2.27")
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("群号", etQunuin))
+            addView(labeledRow("标题", etTitle))
+            addView(labeledRow("简介", etDesc))
+            addView(labeledRow("封面", etCover))
+            addView(labeledRow("跳转", etJumpUrl))
+            addView(labeledRow("ver", etVer))
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("发送千问卡片")
+            .setView(root)
+            .setPositiveButton("发送", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val rqunuin   = etQunuin.text.toString().takeIf  { it.isNotEmpty() } ?: rpeerid
+                val rtitle    = etTitle.text.toString().takeIf   { it.isNotEmpty() } ?: "BlackShell Mod"
+                val rdesc     = etDesc.text.toString().takeIf    { it.isNotEmpty() } ?: "千问已被BlackShellX.org严肃嘿入"
+                val rcoverUrl = etCover.text.toString().takeIf   { it.isNotEmpty() } ?: "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0"
+                val rjumpUrl  = etJumpUrl.text.toString().takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
+                val rver      = etVer.text.toString().takeIf     { it.isNotEmpty() } ?: "9.2.27"
+
+                val pass = readPassFromFile(fixContext)
+                if (pass.isNullOrEmpty()) return@setOnClickListener
+
+                getQianwenPacket(
+                    context = fixContext,
+                    pass = pass,
+                    qunuin = rqunuin,
+                    title = rtitle,
+                    desc = rdesc,
+                    coverUrl = rcoverUrl,
+                    jumpUrl = rjumpUrl,
+                    ver = rver
+                ) { cmd, json ->
+                    sendPacket(cmd, json)
+                }
+
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
     }
     private fun noTagTuwen(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        var peerid: String = getCurrentPeerID()
-        var rqunuin: String
-        var rtitle: String
-        var rdesc: String
-        var rcoverUrl: String
-        var rjumpUrl: String
-        var rver: String
-        if(readPassFromFile(context)==null){
+        val peerid: String = getCurrentPeerID()
+
+        if (readPassFromFile(context) == null) {
             Toasts.error(context, "hacker不让你用")
             return
         }
-        var rpeerid: String = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
 
-        // 第一步：获取音乐链接
-        XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "发送无Tag图文卡片",
-                "请输入发送群号",
-                rpeerid,
-                object : OnInputConfirmListener {
-                    override fun onConfirm(qunuin: String?) {
-//                        if (qunuin.isNullOrEmpty()) {
-//                            rqunuin=
-//                        }
-                        rqunuin = qunuin?.takeIf { it.isNotEmpty() } ?: rpeerid
-                        XPopup.Builder(fixContext)
-                            .asInputConfirm(
-                                "发送无Tag图文卡片",
-                                "标题",
-                                "BlackShell Mod",
-                                object : OnInputConfirmListener {
-                                    override fun onConfirm(title: String?) {
-                                        rtitle = title?.takeIf { it.isNotEmpty() } ?: "BlackShell Mod"
-                                        XPopup.Builder(fixContext)
-                                            .asInputConfirm(
-                                                "发送无Tag图文卡片",
-                                                "请输入简介",
-                                                "BlackShellX.org",
-                                                object : OnInputConfirmListener {
-                                                    override fun onConfirm(desc: String?) {
-                                                        rdesc = desc?.takeIf { it.isNotEmpty() } ?: "BlackShellX.org"
+        val rpeerid = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
 
+        fun createEdit(hint: String, default: String): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
 
-                                                        // 第四步：获取封面URL
-                                                        XPopup.Builder(fixContext)
-                                                            .asInputConfirm(
-                                                                "发送无Tag图文卡片",
-                                                                "请输入封面URL",
-                                                                "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0",
-                                                                object : OnInputConfirmListener {
-                                                                    override fun onConfirm(coverUrl: String?) {
-                                                                        rcoverUrl = coverUrl?.takeIf { it.isNotEmpty() } ?: "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0"
-
-
-                                                                        // 第五步：获取跳转链接
-                                                                        XPopup.Builder(fixContext)
-                                                                            .asInputConfirm(
-                                                                                "发送无Tag图文卡片",
-                                                                                "请输入跳转链接",
-                                                                                "https://c.safaa.cn/bs/ybcard_default.html",
-                                                                                object : OnInputConfirmListener {
-                                                                                    override fun onConfirm(jumpUrl: String?) {
-                                                                                        rjumpUrl = jumpUrl?.takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
-                                                                                        val pass = readPassFromFile(fixContext)
-                                                                                        if (pass.isNullOrEmpty()) {
-                                                                                            return
-                                                                                        }
-
-                                                                                        getNoTagTuwenPacket(
-                                                                                            context = fixContext,
-                                                                                            qunuin = rqunuin,
-                                                                                            pass = pass,
-                                                                                            title = rtitle,
-                                                                                            desc = rdesc,
-                                                                                            coverUrl = rcoverUrl,
-                                                                                            jumpUrl = rjumpUrl,
-                                                                                        ) { cmd, json ->
-                                                                                            sendPacket(cmd, json)
-                                                                                        }
-
-
-                                                                                    }
-                                                                                })
-                                                                            .show()
-                                                                    }
-                                                                })
-                                                            .show()
-                                                    }
-                                                })
-                                            .show()
-                                    }
-                                })
-                            .show()
-                    }
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
                 })
-            .show()
+                addView(edit)
+            }
+        }
 
+        val etQunuin  = createEdit("发送群号", rpeerid)
+        val etTitle   = createEdit("标题", "BlackShell Mod")
+        val etDesc    = createEdit("简介", "BlackShellX.org")
+        val etCover   = createEdit("封面URL", "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0")
+        val etJumpUrl = createEdit("跳转链接", "https://c.safaa.cn/bs/ybcard_default.html")
 
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("群号", etQunuin))
+            addView(labeledRow("标题", etTitle))
+            addView(labeledRow("简介", etDesc))
+            addView(labeledRow("封面", etCover))
+            addView(labeledRow("跳转", etJumpUrl))
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("发送无Tag图文卡片")
+            .setView(root)
+            .setPositiveButton("发送", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val rqunuin   = etQunuin.text.toString().takeIf  { it.isNotEmpty() } ?: rpeerid
+                val rtitle    = etTitle.text.toString().takeIf   { it.isNotEmpty() } ?: "BlackShell Mod"
+                val rdesc     = etDesc.text.toString().takeIf    { it.isNotEmpty() } ?: "BlackShellX.org"
+                val rcoverUrl = etCover.text.toString().takeIf   { it.isNotEmpty() } ?: "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0"
+                val rjumpUrl  = etJumpUrl.text.toString().takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
+
+                val pass = readPassFromFile(fixContext)
+                if (pass.isNullOrEmpty()) return@setOnClickListener
+
+                getNoTagTuwenPacket(
+                    context = fixContext,
+                    qunuin = rqunuin,
+                    pass = pass,
+                    title = rtitle,
+                    desc = rdesc,
+                    coverUrl = rcoverUrl,
+                    jumpUrl = rjumpUrl
+                ) { cmd, json ->
+                    sendPacket(cmd, json)
+                }
+
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
     }
         private fun postRequestToAPI(context: Context, requestBody: Map<String, String>) {
             // 构建POST请求体
@@ -891,108 +839,92 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
     }
     private fun testCard(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        var peerid: String = getCurrentPeerID()
-        var rqunuin: String
-        var rtitle: String
-        var rdesc: String
-        var rcoverUrl: String
-        var rjumpUrl: String
-        var rver: String
-        if(readPassFromFile(context)==null){
+        val peerid: String = getCurrentPeerID()
+
+        if (readPassFromFile(context) == null) {
             Toasts.error(context, "不对劲")
             return
         }
-        var rpeerid: String = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
 
-        // 第一步：获取音乐链接
-        XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "发送测试卡片",
-                "请输入发送群号",
-                rpeerid,
-                object : OnInputConfirmListener {
-                    override fun onConfirm(qunuin: String?) {
-//                        if (qunuin.isNullOrEmpty()) {
-//                            rqunuin=
-//                        }
-                        rqunuin = qunuin?.takeIf { it.isNotEmpty() } ?: rpeerid
+        val rpeerid = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
 
-                        // 第二步：获取标题
-                        XPopup.Builder(fixContext)
-                            .asInputConfirm(
-                                "测试",
-                                "标题",
-                                "BlackShell Mod",
-                                object : OnInputConfirmListener {
-                                    override fun onConfirm(title: String?) {
-                                        rtitle = title?.takeIf { it.isNotEmpty() } ?: "BlackShell Mod"
+        fun createEdit(hint: String, default: String): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
 
-
-                                        // 第三步：获取歌手
-                                        XPopup.Builder(fixContext)
-                                            .asInputConfirm(
-                                                "测试",
-                                                "请输入简介",
-                                                "测试测试测试测试测试",
-                                                object : OnInputConfirmListener {
-                                                    override fun onConfirm(desc: String?) {
-                                                        rdesc = desc?.takeIf { it.isNotEmpty() } ?: "测试测试测试测试测试"
-
-
-                                                        // 第四步：获取封面URL
-                                                        XPopup.Builder(fixContext)
-                                                            .asInputConfirm(
-                                                                "测试",
-                                                                "请输入封面URL",
-                                                                "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0",
-                                                                object : OnInputConfirmListener {
-                                                                    override fun onConfirm(coverUrl: String?) {
-                                                                        rcoverUrl = coverUrl?.takeIf { it.isNotEmpty() } ?: "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0"
-
-
-                                                                        // 第五步：获取跳转链接
-                                                                        XPopup.Builder(fixContext)
-                                                                            .asInputConfirm(
-                                                                                "测试",
-                                                                                "请输入跳转链接",
-                                                                                "https://c.safaa.cn/bs/ybcard_default.html",
-                                                                                object : OnInputConfirmListener {
-                                                                                    override fun onConfirm(jumpUrl: String?) {
-                                                                                        rjumpUrl = jumpUrl?.takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
-                                                                                        val pass = readPassFromFile(fixContext)
-                                                                                        if (pass.isNullOrEmpty()) {
-                                                                                            return
-                                                                                        }
-
-                                                                                        getTestPacket(
-                                                                                            context = fixContext,
-                                                                                            pass = pass,
-                                                                                            qunuin = rqunuin,
-                                                                                            title = rtitle,
-                                                                                            desc = rdesc,
-                                                                                            coverUrl = rcoverUrl,
-                                                                                            jumpUrl = rjumpUrl
-                                                                                        ) { cmd, json ->
-                                                                                            sendPacket(cmd, json)
-                                                                                        }
-
-
-                                                                                    }
-                                                                                })
-                                                                            .show()
-                                                                    }
-                                                                })
-                                                            .show()
-                                                    }
-                                                })
-                                            .show()
-                                    }
-                                })
-                            .show()
-                    }
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
                 })
-            .show()
+                addView(edit)
+            }
+        }
 
+        val etQunuin  = createEdit("发送群号", rpeerid)
+        val etTitle   = createEdit("标题", "BlackShell Mod")
+        val etDesc    = createEdit("简介", "测试测试测试测试测试")
+        val etCover   = createEdit("封面URL", "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0")
+        val etJumpUrl = createEdit("跳转链接", "https://c.safaa.cn/bs/ybcard_default.html")
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("群号", etQunuin))
+            addView(labeledRow("标题", etTitle))
+            addView(labeledRow("简介", etDesc))
+            addView(labeledRow("封面", etCover))
+            addView(labeledRow("跳转", etJumpUrl))
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("发送测试卡片")
+            .setView(root)
+            .setPositiveButton("发送", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val rqunuin  = etQunuin.text.toString().takeIf  { it.isNotEmpty() } ?: rpeerid
+                val rtitle   = etTitle.text.toString().takeIf   { it.isNotEmpty() } ?: "BlackShell Mod"
+                val rdesc    = etDesc.text.toString().takeIf    { it.isNotEmpty() } ?: "测试测试测试测试测试"
+                val rcoverUrl = etCover.text.toString().takeIf  { it.isNotEmpty() } ?: "https://p.qlogo.cn/gdynamic/MIwbbVhjoVzDgAsUTNsD0CtU5WJCz3gnHibZicw4YmISI/0"
+                val rjumpUrl = etJumpUrl.text.toString().takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
+
+                val pass = readPassFromFile(fixContext)
+                if (pass.isNullOrEmpty()) return@setOnClickListener
+
+                getTestPacket(
+                    context = fixContext,
+                    pass = pass,
+                    qunuin = rqunuin,
+                    title = rtitle,
+                    desc = rdesc,
+                    coverUrl = rcoverUrl,
+                    jumpUrl = rjumpUrl
+                ) { cmd, json ->
+                    sendPacket(cmd, json)
+                }
+
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
     }
     private fun getTestPacket(
         context: Context,
@@ -1089,89 +1021,89 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
     private fun teamupCard(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        var peerid: String = getCurrentPeerID()
-        var rqunuin: String
-        var rtitle: String
-        var rdesc: String
-        var roverTimestamp: Int
-        var rver: String
-        if(readPassFromFile(context)==null){
+        val peerid: String = getCurrentPeerID()
+
+        if (readPassFromFile(context) == null) {
             Toasts.error(context, "不对劲")
             return
         }
-        var rpeerid: String = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
 
-        XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "发送新版群报名卡片",
-                "请输入发送群号",
-                rpeerid,
-                object : OnInputConfirmListener {
-                    override fun onConfirm(qunuin: String?) {
-//                        if (qunuin.isNullOrEmpty()) {
-//                            rqunuin=
-//                        }
-                        rqunuin = qunuin?.takeIf { it.isNotEmpty() } ?: rpeerid
+        val rpeerid = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
 
-                        // 第二步：获取标题
-                        XPopup.Builder(fixContext)
-                            .asInputConfirm(
-                                "发送新版群报名卡片",
-                                "标题",
-                                "BlackShell Mod",
-                                object : OnInputConfirmListener {
-                                    override fun onConfirm(title: String?) {
-                                        rtitle = title?.takeIf { it.isNotEmpty() } ?: "BlackShell Mod"
+        fun createEdit(hint: String, default: String): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
 
-
-                                        // 第三步：获取歌手
-                                        XPopup.Builder(fixContext)
-                                            .asInputConfirm(
-                                                "发送新版群报名卡片",
-                                                "请输入简介",
-                                                "简介",
-                                                object : OnInputConfirmListener {
-                                                    override fun onConfirm(desc: String?) {
-                                                        rdesc = desc?.takeIf { it.isNotEmpty() } ?: "简介"
-
-
-                                                        // 第四步：获取封面URL
-                                                        XPopup.Builder(fixContext)
-                                                            .asInputConfirm(
-                                                                "发送新版群报名卡片",
-                                                                "请输入截止时间戳",
-                                                                (System.currentTimeMillis() / 1000).toString(),
-                                                                object : OnInputConfirmListener {
-                                                                    override fun onConfirm(overTimestamp: String?) {
-                                                                        roverTimestamp = overTimestamp?.takeIf { it.isNotEmpty() }?.toInt() ?: (System.currentTimeMillis() / 1000).toInt()
-                                                                        val pass = readPassFromFile(fixContext)
-                                                                        if (pass.isNullOrEmpty()) {
-                                                                            return
-                                                                        }
-
-                                                                        getTeamUpPacket(
-                                                                            context = fixContext,
-                                                                            pass = pass,
-                                                                            qunuin = rqunuin,
-                                                                            title = rtitle,
-                                                                            desc = rdesc,
-                                                                            overTimestamp = roverTimestamp
-                                                                        ) { cmd, json ->
-                                                                            sendPacket(cmd, json)
-                                                                        }
-                                                                    }
-                                                                })
-                                                            .show()
-                                                    }
-                                                })
-                                            .show()
-                                    }
-                                })
-                            .show()
-                    }
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
                 })
-            .show()
+                addView(edit)
+            }
+        }
 
+        val etQunuin = createEdit("发送群号", rpeerid)
+        val etTitle = createEdit("标题", "BlackShell Mod")
+        val etDesc = createEdit("简介", "简介")
+        val etTimestamp = createEdit("截止时间戳", (System.currentTimeMillis() / 1000).toString())
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("群号", etQunuin))
+            addView(labeledRow("标题", etTitle))
+            addView(labeledRow("简介", etDesc))
+            addView(labeledRow("截止时间", etTimestamp))
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("发送新版群报名卡片")
+            .setView(root)
+            .setPositiveButton("发送", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val rqunuin = etQunuin.text.toString().takeIf { it.isNotEmpty() } ?: rpeerid
+                val rtitle = etTitle.text.toString().takeIf { it.isNotEmpty() } ?: "BlackShell Mod"
+                val rdesc = etDesc.text.toString().takeIf { it.isNotEmpty() } ?: "简介"
+                val roverTimestamp = etTimestamp.text.toString().takeIf { it.isNotEmpty() }
+                    ?.toIntOrNull() ?: (System.currentTimeMillis() / 1000).toInt()
+
+                val pass = readPassFromFile(fixContext)
+                if (pass.isNullOrEmpty()) return@setOnClickListener
+
+                getTeamUpPacket(
+                    context = fixContext,
+                    pass = pass,
+                    qunuin = rqunuin,
+                    title = rtitle,
+                    desc = rdesc,
+                    overTimestamp = roverTimestamp
+                ) { cmd, json ->
+                    sendPacket(cmd, json)
+                }
+
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
     }
     private fun getTeamUpPacket(
         context: Context,
@@ -1454,56 +1386,71 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
     private fun getGshopCard(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        
+
         if (readPassFromFile(context) == null) {
             Toasts.error(context, "hacker不让你用")
             return
         }
 
-        // 首先获取按钮文字和标题
-        XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "商品卡片",
-                "按钮文字",
-                "大嘿壳",
-                object : OnInputConfirmListener {
-                    override fun onConfirm(btnText: String?) {
-                        val finalBtnText = btnText?.takeIf { it.isNotEmpty() } ?: "大嘿壳"
-                        
-                        XPopup.Builder(fixContext)
-                            .asInputConfirm(
-                                "商品卡片", 
-                                "外显",
-                                "嘿壳群主",
-                                object : OnInputConfirmListener {
-                                    override fun onConfirm(prompt: String?) {
-                                        val finalPrompt = prompt?.takeIf { it.isNotEmpty() } ?: "嘿壳群主"
-                                        
-                                        // 获取商品数量
-                                        XPopup.Builder(fixContext)
-                                            .asInputConfirm(
-                                                "商品卡片",
-                                                "请输入商品数量",
-                                                "1",
-                                                object : OnInputConfirmListener {
-                                                    override fun onConfirm(numStr: String?) {
-                                                        val num = try {
-                                                            numStr?.toInt()?.coerceAtLeast(1) ?: 1
-                                                        } catch (e: NumberFormatException) {
-                                                            1
-                                                        }
-                                                        
-                                                        // 开始收集商品信息
-                                                        collectProductsInfo(fixContext, finalBtnText, finalPrompt, num, 0, mutableListOf())
-                                                    }
-                                                })
-                                            .show()
-                                    }
-                                })
-                            .show()
-                    }
+        fun createEdit(hint: String, default: String): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
+
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
                 })
-            .show()
+                addView(edit)
+            }
+        }
+
+        val etBtnText = createEdit("按钮文字", "大嘿壳")
+        val etPrompt  = createEdit("外显", "嘿壳群主")
+        val etNum     = createEdit("商品数量", "1").apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        }
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("按钮", etBtnText))
+            addView(labeledRow("外显", etPrompt))
+            addView(labeledRow("数量", etNum))
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("商品卡片")
+            .setView(root)
+            .setPositiveButton("下一步", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val finalBtnText = etBtnText.text.toString().takeIf { it.isNotEmpty() } ?: "大嘿壳"
+                val finalPrompt  = etPrompt.text.toString().takeIf  { it.isNotEmpty() } ?: "嘿壳群主"
+                val num = etNum.text.toString().toIntOrNull()?.coerceAtLeast(1) ?: 1
+
+                dialog.dismiss()
+                collectProductsInfo(fixContext, finalBtnText, finalPrompt, num, 0, mutableListOf())
+            }
+        }
+
+        dialog.show()
     }
 
     private fun collectProductsInfo(
@@ -1515,123 +1462,82 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         products: MutableList<Product>
     ) {
         if (currentIndex >= totalNum) {
-            // 所有商品信息收集完成，发送请求
             sendGshopCardRequest(context, readPassFromFile(context)!!, btnText, prompt, products)
             return
         }
 
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        
-        // 步骤1: 获取商品图片链接
-        XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "第${currentIndex + 1}个商品", 
-                "商品图片链接", 
-                products.getOrNull(currentIndex)?.img ?: "https://gchat.qpic.cn/gchatpic_new/0/0-0-1E29EE09B8A0323A99F35A2A3275655F/0?term=2&is_origin=1"
-            ) { img ->
-                val finalImg = img.takeIf { it.isNotEmpty() } ?: "https://gchat.qpic.cn/gchatpic_new/0/0-0-1E29EE09B8A0323A99F35A2A3275655F/0?term=2&is_origin=1"
-                
-                if (finalImg.isEmpty()) {
-                    Toasts.error(context, "商品图片链接不能为空")
-                    return@asInputConfirm
-                }
-                
-                // 步骤2: 获取原价
-                XPopup.Builder(fixContext)
-                    .asInputConfirm(
-                        "第${currentIndex + 1}个商品", 
-                        "商品原价", 
-                        products.getOrNull(currentIndex)?.ori_price ?: ""
-                    ) { oriPrice ->
-                        val finalOriPrice = oriPrice.takeIf { it.isNotEmpty() } ?: ""
-                        
-                        if (finalOriPrice.isEmpty()) {
-                            Toasts.error(context, "商品原价不能为空")
-                            return@asInputConfirm
-                        }
-                        
-                        // 步骤3: 获取现价
-                        XPopup.Builder(fixContext)
-                            .asInputConfirm(
-                                "第${currentIndex + 1}个商品", 
-                                "商品现价", 
-                                products.getOrNull(currentIndex)?.price ?: ""
-                            ) { price ->
-                                val finalPrice = price.takeIf { it.isNotEmpty() } ?: ""
-                                
-                                if (finalPrice.isEmpty()) {
-                                    Toasts.error(context, "商品现价不能为空")
-                                    return@asInputConfirm
-                                }
-                                
-                                // 步骤4: 获取销量
-                                XPopup.Builder(fixContext)
-                                    .asInputConfirm(
-                                        "第${currentIndex + 1}个商品", 
-                                        "销量", 
-                                        products.getOrNull(currentIndex)?.sales ?: ""
-                                    ) { sales ->
-                                        val finalSales = sales.takeIf { it.isNotEmpty() } ?: ""
-                                        
-                                        if (finalSales.isEmpty()) {
-                                            Toasts.error(context, "销量不能为空")
-                                            return@asInputConfirm
-                                        }
-                                        
-                                        // 步骤5: 获取商品名称
-                                        XPopup.Builder(fixContext)
-                                            .asInputConfirm(
-                                                "第${currentIndex + 1}个商品", 
-                                                "商品名称", 
-                                                products.getOrNull(currentIndex)?.title ?: ""
-                                            ) { title ->
-                                                val finalTitle = title.takeIf { it.isNotEmpty() } ?: ""
-                                                
-                                                if (finalTitle.isEmpty()) {
-                                                    Toasts.error(context, "商品名称不能为空")
-                                                    return@asInputConfirm
-                                                }
-                                                
-                                                // 步骤6: 获取商品链接
-                                                XPopup.Builder(fixContext)
-                                                    .asInputConfirm(
-                                                        "第${currentIndex + 1}个商品", 
-                                                        "商品链接", 
-                                                        products.getOrNull(currentIndex)?.url ?: ""
-                                                    ) { url ->
-                                                        val finalUrl = url.takeIf { it.isNotEmpty() } ?: ""
-                                                        
-                                                        if (finalUrl.isEmpty()) {
-                                                            Toasts.error(context, "商品链接不能为空")
-                                                            return@asInputConfirm
-                                                        }
-                                                        
-                                                        // 所有字段都不为空，创建Product对象
-                                                        val product = Product(
-                                                            finalImg, 
-                                                            finalOriPrice, 
-                                                            finalPrice, 
-                                                            finalSales, 
-                                                            finalTitle, 
-                                                            finalUrl
-                                                        )
-                                                        products.add(product)
-                                                        
-                                                        // 继续收集下一个商品
-                                                        collectProductsInfo(
-                                                            context, 
-                                                            btnText, 
-                                                            prompt, 
-                                                            totalNum, 
-                                                            currentIndex + 1, 
-                                                            products
-                                                        )
-                                                    }.show()
-                                            }.show()
-                                    }.show()
-                            }.show()
-                    }.show()
-            }.show()
+        val existing = products.getOrNull(currentIndex)
+        val defaultImg = "https://gchat.qpic.cn/gchatpic_new/0/0-0-1E29EE09B8A0323A99F35A2A3275655F/0?term=2&is_origin=1"
+
+        fun createEdit(hint: String, default: String): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
+
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
+                })
+                addView(edit)
+            }
+        }
+
+        val etImg      = createEdit("商品图片链接", existing?.img      ?: defaultImg)
+        val etOriPrice = createEdit("商品原价",     existing?.ori_price ?: "")
+        val etPrice    = createEdit("商品现价",     existing?.price     ?: "")
+        val etSales    = createEdit("销量",         existing?.sales     ?: "")
+        val etTitle    = createEdit("商品名称",     existing?.title     ?: "")
+        val etUrl      = createEdit("商品链接",     existing?.url       ?: "")
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("图片",  etImg))
+            addView(labeledRow("原价",  etOriPrice))
+            addView(labeledRow("现价",  etPrice))
+            addView(labeledRow("销量",  etSales))
+            addView(labeledRow("名称",  etTitle))
+            addView(labeledRow("链接",  etUrl))
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("第${currentIndex + 1}个商品（共${totalNum}个）")
+            .setView(root)
+            .setPositiveButton("下一步", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val finalImg      = etImg.text.toString().takeIf      { it.isNotEmpty() } ?: run { Toasts.error(context, "商品图片链接不能为空"); return@setOnClickListener }
+                val finalOriPrice = etOriPrice.text.toString().takeIf { it.isNotEmpty() } ?: run { Toasts.error(context, "商品原价不能为空");     return@setOnClickListener }
+                val finalPrice    = etPrice.text.toString().takeIf    { it.isNotEmpty() } ?: run { Toasts.error(context, "商品现价不能为空");     return@setOnClickListener }
+                val finalSales    = etSales.text.toString().takeIf    { it.isNotEmpty() } ?: run { Toasts.error(context, "销量不能为空");         return@setOnClickListener }
+                val finalTitle    = etTitle.text.toString().takeIf    { it.isNotEmpty() } ?: run { Toasts.error(context, "商品名称不能为空");     return@setOnClickListener }
+                val finalUrl      = etUrl.text.toString().takeIf      { it.isNotEmpty() } ?: run { Toasts.error(context, "商品链接不能为空");     return@setOnClickListener }
+
+                products.add(Product(finalImg, finalOriPrice, finalPrice, finalSales, finalTitle, finalUrl))
+                dialog.dismiss()
+
+                collectProductsInfo(context, btnText, prompt, totalNum, currentIndex + 1, products)
+            }
+        }
+
+        dialog.show()
     }
 
     private fun sendGshopCardRequest(
@@ -1739,90 +1645,79 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
             }
         })
         }
-    
-        private fun getQzoneCard(context: Context) {
-            val fixContext = CommonContextWrapper.createAppCompatContext(context)
-    
-            // 检查授权码
-            if (readPassFromFile(context) == null) {
-                Toasts.error(context, "hacker不让你用")
-                return
-            }
-    
-            var title: String
-            var jumpUrl: String
-            var preview: String
-            var prompt: String
-            var btnText: String
-    
-            // 第一步：获取标题
-            XPopup.Builder(fixContext)
-                .asInputConfirm(
-                    "QQ空间卡片",
-                    "请输入标题",
-                    "邀请你抽取AI盲盒签",
-                    object : OnInputConfirmListener {
-                        override fun onConfirm(inputTitle: String?) {
-                            title = inputTitle?.takeIf { it.isNotEmpty() } ?: "邀请你抽取AI盲盒签"
-    
-                            // 第二步：获取跳转链接
-                            XPopup.Builder(fixContext)
-                                .asInputConfirm(
-                                    "QQ空间卡片",
-                                    "请输入跳转链接",
-                                    "https://h5.tu.qq.com/stable/daily-check-in/index?parent_trace_id=3a423341-4cec-174b-7d76-86d2a1508d66&current_channel=link&root_channel=qiandao&level=1&jump2App=1",
-                                    object : OnInputConfirmListener {
-                                        override fun onConfirm(inputJumpUrl: String?) {
-                                            jumpUrl = inputJumpUrl?.takeIf { it.isNotEmpty() } ?: "https://h5.tu.qq.com/stable/daily-check-in/index?parent_trace_id=3a423341-4cec-174b-7d76-86d2a1508d66&current_channel=link&root_channel=qiandao&level=1&jump2App=1"
-    
-                                            // 第三步：获取预览图链接
-                                            XPopup.Builder(fixContext)
-                                                .asInputConfirm(
-                                                    "QQ空间卡片",
-                                                    "请输入预览图链接",
-                                                    "https://shadow-h5-prd-1251316161.file.myqcloud.com/daily-check-in/regular_skin_v2/result/preview.png",
-                                                    object : OnInputConfirmListener {
-                                                        override fun onConfirm(inputPreview: String?) {
-                                                            preview = inputPreview?.takeIf { it.isNotEmpty() } ?: "https://shadow-h5-prd-1251316161.file.myqcloud.com/daily-check-in/regular_skin_v2/result/preview.png"
-    
-                                                            // 第四步：获取提示文本
-                                                            XPopup.Builder(fixContext)
-                                                                .asInputConfirm(
-                                                                    "QQ空间卡片",
-                                                                    "请输入外显(prompt)",
-                                                                    "邀请你抽取AI盲盒签",
-                                                                    object : OnInputConfirmListener {
-                                                                        override fun onConfirm(inputPrompt: String?) {
-                                                                            prompt = inputPrompt?.takeIf { it.isNotEmpty() } ?: "邀请你抽取AI盲盒签"
-    
-                                                                            // 第五步：获取按钮文字
-                                                                            XPopup.Builder(fixContext)
-                                                                                .asInputConfirm(
-                                                                                    "QQ空间卡片",
-                                                                                    "请输入按钮文字",
-                                                                                    "立即抽取",
-                                                                                    object : OnInputConfirmListener {
-                                                                                        override fun onConfirm(inputBtnText: String?) {
-                                                                                            btnText = inputBtnText?.takeIf { it.isNotEmpty() } ?: "立即抽取"
-    
-                                                                                            // 所有信息收集完成，发送请求到API
-                                                                                            sendQzoneCardRequest(context, title, jumpUrl, preview, prompt, btnText)
-                                                                                        }
-                                                                                    })
-                                                                                .show()
-                                                                        }
-                                                                    })
-                                                                .show()
-                                                        }
-                                                    })
-                                                .show()
-                                        }
-                                    })
-                                .show()
-                        }
-                    })
-                .show()
+
+    private fun getQzoneCard(context: Context) {
+        val fixContext = CommonContextWrapper.createAppCompatContext(context)
+
+        if (readPassFromFile(context) == null) {
+            Toasts.error(context, "hacker不让你用")
+            return
         }
+
+        fun createEdit(hint: String, default: String): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
+
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
+                })
+                addView(edit)
+            }
+        }
+
+        val etTitle   = createEdit("标题", "邀请你抽取AI盲盒签")
+        val etJumpUrl = createEdit("跳转链接", "https://h5.tu.qq.com/stable/daily-check-in/index?parent_trace_id=3a423341-4cec-174b-7d76-86d2a1508d66&current_channel=link&root_channel=qiandao&level=1&jump2App=1")
+        val etPreview = createEdit("预览图链接", "https://shadow-h5-prd-1251316161.file.myqcloud.com/daily-check-in/regular_skin_v2/result/preview.png")
+        val etPrompt  = createEdit("外显(prompt)", "邀请你抽取AI盲盒签")
+        val etBtnText = createEdit("按钮文字", "立即抽取")
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("标题",   etTitle))
+            addView(labeledRow("跳转",   etJumpUrl))
+            addView(labeledRow("预览图", etPreview))
+            addView(labeledRow("外显",   etPrompt))
+            addView(labeledRow("按钮",   etBtnText))
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("QQ空间卡片")
+            .setView(root)
+            .setPositiveButton("发送", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val title   = etTitle.text.toString().takeIf   { it.isNotEmpty() } ?: "邀请你抽取AI盲盒签"
+                val jumpUrl = etJumpUrl.text.toString().takeIf { it.isNotEmpty() } ?: "https://h5.tu.qq.com/stable/daily-check-in/index?parent_trace_id=3a423341-4cec-174b-7d76-86d2a1508d66&current_channel=link&root_channel=qiandao&level=1&jump2App=1"
+                val preview = etPreview.text.toString().takeIf { it.isNotEmpty() } ?: "https://shadow-h5-prd-1251316161.file.myqcloud.com/daily-check-in/regular_skin_v2/result/preview.png"
+                val prompt  = etPrompt.text.toString().takeIf  { it.isNotEmpty() } ?: "邀请你抽取AI盲盒签"
+                val btnText = etBtnText.text.toString().takeIf { it.isNotEmpty() } ?: "立即抽取"
+
+                sendQzoneCardRequest(context, title, jumpUrl, preview, prompt, btnText)
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
+    }
     
         private fun sendQzoneCardRequest(
             context: Context,
@@ -1933,69 +1828,73 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
     private fun getQzoneCard2(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
 
-        // 检查授权码
         if (readPassFromFile(context) == null) {
             Toasts.error(context, "hacker不让你用")
             return
         }
 
-        var tag: String
-        var jumpUrl: String
-        var preview: String
-        var tagIcon: String
+        val defaultAvatar = "https://thirdqq.qlogo.cn/g?b=qq&nk=${QAppUtils.getCurrentUin()}&s=640"
 
-        // 第一步：获取标题
-        XPopup.Builder(fixContext)
-            .asInputConfirm(
-                "QQ空间视频卡片",
-                "请输入tag",
-                "BlackShell Mod",
-                object : OnInputConfirmListener {
-                    override fun onConfirm(inputTag: String?) {
-                        tag = inputTag?.takeIf { it.isNotEmpty() } ?: "BlackShell Mod"
+        fun createEdit(hint: String, default: String): android.widget.EditText {
+            return android.widget.EditText(fixContext).apply {
+                this.hint = hint
+                setText(default)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+        }
 
-                        // 第二步：获取跳转链接
-                        XPopup.Builder(fixContext)
-                            .asInputConfirm(
-                                "QQ空间视频卡片",
-                                "请输入跳转链接",
-                                "https://c.safaa.cn/bs/ybcard_default.html",
-                                object : OnInputConfirmListener {
-                                    override fun onConfirm(inputJumpUrl: String?) {
-                                        jumpUrl = inputJumpUrl?.takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
-
-                                        // 第三步：获取预览图链接
-                                        XPopup.Builder(fixContext)
-                                            .asInputConfirm(
-                                                "QQ空间视频卡片",
-                                                "请输入预览图链接",
-                                                "https://thirdqq.qlogo.cn/g?b=qq&nk="+QAppUtils.getCurrentUin().toString()+"&s=640",
-                                                object : OnInputConfirmListener {
-                                                    override fun onConfirm(inputPreview: String?) {
-                                                        preview = inputPreview?.takeIf { it.isNotEmpty() } ?: ("https://thirdqq.qlogo.cn/g?b=qq&nk="+QAppUtils.getCurrentUin().toString()+"&s=640")
-
-                                                        // 第四步：获取提示文本
-                                                        XPopup.Builder(fixContext)
-                                                            .asInputConfirm(
-                                                                "QQ空间视频卡片",
-                                                                "请输入tag图标",
-                                                                "https://thirdqq.qlogo.cn/g?b=qq&nk="+QAppUtils.getCurrentUin().toString()+"&s=640",
-                                                                object : OnInputConfirmListener {
-                                                                    override fun onConfirm(inputTagIcon: String?) {
-                                                                        tagIcon = inputTagIcon?.takeIf { it.isNotEmpty() } ?: ("https://thirdqq.qlogo.cn/g?b=qq&nk="+QAppUtils.getCurrentUin().toString()+"&s=640")
-                                                                        sendQzoneCardRequest2(context, tag, jumpUrl, preview, tagIcon)
-                                                                    }
-                                                                })
-                                                            .show()
-                                                    }
-                                                })
-                                            .show()
-                                    }
-                                })
-                            .show()
-                    }
+        fun labeledRow(label: String, edit: android.widget.EditText): android.widget.LinearLayout {
+            return android.widget.LinearLayout(fixContext).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+                addView(android.widget.TextView(fixContext).apply {
+                    text = label
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 16 }
                 })
-            .show()
+                addView(edit)
+            }
+        }
+
+        val etTag     = createEdit("tag", "BlackShell Mod")
+        val etJumpUrl = createEdit("跳转链接", "https://c.safaa.cn/bs/ybcard_default.html")
+        val etPreview = createEdit("预览图链接", defaultAvatar)
+        val etTagIcon = createEdit("tag图标", defaultAvatar)
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(labeledRow("tag",  etTag))
+            addView(labeledRow("跳转", etJumpUrl))
+            addView(labeledRow("预览图", etPreview))
+            addView(labeledRow("tag图标", etTagIcon))
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("QQ空间视频卡片")
+            .setView(root)
+            .setPositiveButton("发送", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val tag     = etTag.text.toString().takeIf     { it.isNotEmpty() } ?: "BlackShell Mod"
+                val jumpUrl = etJumpUrl.text.toString().takeIf { it.isNotEmpty() } ?: "https://c.safaa.cn/bs/ybcard_default.html"
+                val preview = etPreview.text.toString().takeIf { it.isNotEmpty() } ?: defaultAvatar
+                val tagIcon = etTagIcon.text.toString().takeIf { it.isNotEmpty() } ?: defaultAvatar
+
+                sendQzoneCardRequest2(context, tag, jumpUrl, preview, tagIcon)
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
     }
 
     private fun sendQzoneCardRequest2(
