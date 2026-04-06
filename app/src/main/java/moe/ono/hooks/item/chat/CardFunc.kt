@@ -43,7 +43,7 @@ import com.tencent.qphone.base.remote.ToServiceMsg
 @SuppressLint("DiscouragedApi")
 @HookItem(
     path = "聊天与消息/卡片功能",
-    description = "请勿使用此功能用作任何违法行为，作者概不负责。部分功能非开源，你无法通过任何方式从BlackShell Mod中获取任何一点关于未开源的卡片的线索"
+    description = "请勿使用此功能用作任何违法行为，作者概不负责。部分功能非开源，你无法通过任何方式从BlackShell Mod的开源仓库中获取任何关于未开源的卡片的线索"
 )
 class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
@@ -103,15 +103,12 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
     override fun clickHandle(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
-        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间盲盒签卡","*QQ空间video卡","*无tag图文卡")//, "方式二：还没写好"
+        val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间盲盒签卡","*QQ空间video卡","*无tag图文卡","*测测测")//, "方式二：还没写好"
         
         XPopup.Builder(fixContext)
             .asCenterList("选择卡片(带*的选项仅授权后可用)", options, OnSelectListener { position, text ->
                 when (position) {
                     0 -> sendMusicCardByAPI(context)
-//                    1 -> {
-//                        sendPacket("LightAppSvc.mini_app_share.AdaptShareInfo", "{\"1\":13,\"2\":\"V1_AND_SQ_9.2.27_12160_YYB_D\",\"3\":\"i=cef2936225c19485249acfd710001e41a206&imsi=cef2936225c19485249acfd710001e41a206&mac=02:00:00:00:00:00&m=Redmi K30&o=12&a=31&sd=0&c64=1&sc=1&p=1080*2261&aid=cef2936225c19485249acfd710001e41a206&f=Xiaomi&mm=7568&cf=1762&cc=8&qimei=00227d2850bf18355bb57799ccb04ece8b41a2064799b7c7&qimei36=cef2936225c19485249acfd710001e41a206&sharpP=0&n=wifi&support_xsj_live=true&client_mod=default\",\"4\":{\"2\":\"1109937557\",\"3\":\"哔哩哔哩\",\"4\":\"嘿壳嘿壳嘿壳嘿入bili\",\"5\":1770427251,\"6\":3,\"7\":1,\"8\":0,\"9\":{},\"11\":\"pages/video/video?bvid=BV1McmDBrEEm&share_source=qq_ugc&unique_k=d6N2im4\",\"13\":3,\"14\":0,\"16\":0,\"17\":\"https://b23.tv/d6N2im4?share_medium=android&share_source=qq&bbid=XY61C0F607264FC6318A92B9E13C65DB7CD3C&ts=1770427250798\",\"18\":{\"6\":3906651886253060144},\"22\":0},\"5\":\"3623383556_0207092051621_96202\"}")
-//                    }
                     1 -> {
                         yuanbaoCard(context)
                     }
@@ -129,6 +126,9 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
                     }
                     6 -> {
                         noTagTuwen(context)
+                    }
+                    7 -> {
+                        testCard(context)
                     }
                 }
             })
@@ -899,13 +899,12 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
             Toasts.error(context, "不对劲")
             return
         }
-
         var rpeerid: String = peerid.takeIf { it.isNotEmpty() } ?: "1076550424"
 
         // 第一步：获取音乐链接
         XPopup.Builder(fixContext)
             .asInputConfirm(
-                "发送元宝卡片",
+                "发送测试卡片",
                 "请输入发送群号",
                 rpeerid,
                 object : OnInputConfirmListener {
@@ -1032,12 +1031,12 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
             override fun onResponse(call: Call, response: Response) {
                 try {
-                    if (!response.isSuccessful) {
-                        SyncUtils.runOnUiThread {
-                            Toasts.error(context, "请求失败: ${response.code}")
-                        }
-                        return
-                    }
+//                    if (!response.isSuccessful) {
+//                        SyncUtils.runOnUiThread {
+//                            Toasts.error(context, "请求失败: ${response.code}")
+//                        }
+//                        return
+//                    }
 
                     val responseBody = response.body?.string()
                     if (responseBody.isNullOrEmpty()) {
@@ -1053,7 +1052,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
                         SyncUtils.runOnUiThread {
                             Toasts.error(
                                 context,
-                                "API错误: ${jsonResponse.optString("msg")}"
+                                "${jsonResponse.optString("msg")}"
                             )
                         }
                         return
