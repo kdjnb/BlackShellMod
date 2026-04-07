@@ -17,7 +17,6 @@ import com.lxj.xpopup.XPopup
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XC_MethodHook.MethodHookParam
 import de.robv.android.xposed.XposedHelpers
-import moe.ono.R
 import moe.ono.bridge.ntapi.ChatTypeConstants
 import moe.ono.config.CacheConfig
 import moe.ono.config.ConfigManager
@@ -37,8 +36,8 @@ import moe.ono.hooks.item.developer.GetBknByCookie
 import moe.ono.hooks.item.developer.GetCookie
 import moe.ono.hooks.item.developer.JumpSchemeUri
 import moe.ono.hooks.item.developer.QQHookCodec
-import moe.ono.hooks.item.developer.TimestampTool
 import moe.ono.hooks.item.developer.QQPacketHelperEntry
+import moe.ono.hooks.item.developer.TimestampTool
 import moe.ono.hooks.item.entertainment.BigForward
 import moe.ono.hooks.item.entertainment.StealTraffic
 import moe.ono.hooks.item.sigma.QQMessageTracker
