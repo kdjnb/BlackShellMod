@@ -46,6 +46,7 @@ materialDialog = "3.3.0"
 okhttpVersion = "4.12.0"
 
 [libraries]
+androidx-lifecycle-common = { module = "androidx.lifecycle:lifecycle-common", version = "2.7.0" }
 android-json-viewer = { module = "com.github.pvarry:android-json-viewer", version.ref = "androidJsonViewer" }
 android-tools = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 #noinspection SimilarGradleDependency
