@@ -35,7 +35,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/tv_tip"
-                android:text="点击查找后，ONO 将重新查找被混淆的类。如果你直接关闭此窗口，所有功能将不会被加载。"
+                android:text="点击查找后，BlackShell Mod 将重新查找被混淆的类。如果你直接关闭此窗口，所有功能将不会被加载。"
                 android:textColor="@color/secondTextColor"
                 android:textSize="16sp"
                 android:layout_gravity="center"
