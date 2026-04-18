@@ -46,7 +46,7 @@ import java.security.MessageDigest
 class HintBlackShellUser : BaseSwitchFunctionHookItem() {
 
     private val ID_HINT_LAYOUT = 0x114520
-    private val ID_HINT_TEXTVIEW = 0x114521
+    private val ID_HINT_TEXTVIEW = 0x114510
 
     private val constraintSetClz by lazy { "androidx.constraintlayout.widget.ConstraintSet".clazz!! }
     private val constraintLayoutClz by lazy { "androidx.constraintlayout.widget.ConstraintLayout".clazz!! }
