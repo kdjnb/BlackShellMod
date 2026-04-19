@@ -23,6 +23,7 @@ import moe.ono.util.CustomMenu
 import moe.ono.util.Logger
 import moe.ono.util.Session
 import moe.ono.util.SyncUtils
+import moe.ono.util.analytics.ActionReporter.reportVisitor
 import java.io.ByteArrayOutputStream
 import java.util.zip.Deflater
 
@@ -48,6 +49,7 @@ class LinkRepeater : BaseSwitchFunctionHookItem(), OnMenuBuilder {
             R.id.item_link_repeater
         ) {
             try {
+                reportVisitor(AppRuntimeHelper.getAccount(), "Use-LinkRepeater")
                 Logger.d("MENU_CLICK", "用户点击菜单")
 
                 val msgId = Reflex.invokeVirtual(aioMsgItem, "getMsgId") as Long

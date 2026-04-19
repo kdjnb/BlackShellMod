@@ -17,7 +17,9 @@ import moe.ono.hooks._core.annotation.HookItem
 import moe.ono.hooks.base.util.Toasts
 import moe.ono.loader.hookapi.IShortcutMenu
 import moe.ono.ui.CommonContextWrapper
+import moe.ono.util.AppRuntimeHelper
 import moe.ono.util.SyncUtils
+import moe.ono.util.analytics.ActionReporter.reportVisitor
 import java.lang.Exception
 
 @SuppressLint("DiscouragedApi")
@@ -36,6 +38,7 @@ class StealTraffic : BaseSwitchFunctionHookItem(), IShortcutMenu {
 
     override fun clickHandle(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
+        reportVisitor(AppRuntimeHelper.getAccount(), "CreateView-StealTraffic")
 
         fun createEdit(hint: String, default: String = ""): EditText {
             return EditText(fixContext).apply {

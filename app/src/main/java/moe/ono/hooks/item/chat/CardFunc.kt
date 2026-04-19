@@ -38,6 +38,7 @@ import java.io.File
 import java.security.MessageDigest
 import com.tencent.qphone.base.remote.FromServiceMsg
 import com.tencent.qphone.base.remote.ToServiceMsg
+import moe.ono.util.analytics.ActionReporter.reportVisitor
 
 
 @SuppressLint("DiscouragedApi")
@@ -103,6 +104,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
     override fun clickHandle(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
+        reportVisitor(AppRuntimeHelper.getAccount(), "CreateView-CardFunc")
         val options = arrayOf("音卡（OIAPI）","*元宝卡","*千问卡","*商品卡","*QQ空间盲盒签卡","*QQ空间video卡","*无tag图文卡","*测测测","*新版报名卡","*AI头像卡")//, "方式二：还没写好"
         
         XPopup.Builder(fixContext)

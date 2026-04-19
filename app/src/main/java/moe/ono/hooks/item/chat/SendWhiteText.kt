@@ -4,17 +4,15 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import com.lxj.xpopup.XPopup
-import com.lxj.xpopup.interfaces.OnInputConfirmListener
 import moe.ono.creator.PacketHelperDialog
-import moe.ono.hooks._base.BaseClickableFunctionHookItem
 import moe.ono.hooks._base.BaseSwitchFunctionHookItem
 import moe.ono.hooks._core.annotation.HookItem
 import moe.ono.hooks.base.util.Toasts
 import moe.ono.loader.hookapi.IShortcutMenu
 import moe.ono.ui.CommonContextWrapper
+import moe.ono.util.AppRuntimeHelper
 import moe.ono.util.SyncUtils
-import java.lang.Exception
+import moe.ono.util.analytics.ActionReporter.reportVisitor
 
 @SuppressLint("DiscouragedApi")
 @HookItem(
@@ -32,6 +30,7 @@ class SendWhiteText : BaseSwitchFunctionHookItem(), IShortcutMenu {
 
     override fun clickHandle(context: Context) {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
+        reportVisitor(AppRuntimeHelper.getAccount(), "CreateView-SendWhiteText")
 
         val etText = android.widget.EditText(fixContext).apply {
             hint = "要发送的白字内容"
