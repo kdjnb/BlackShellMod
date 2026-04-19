@@ -182,215 +182,133 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
             BigForward::class.java).path)
 
 
-        val items = ArrayList<String>()
-        if (qqPacketHelper) {
-            items.add("QQPacketHelper")
-        }
-        if (sendFakeFile) {
-            items.add("假文件")
-        }
-        if (qqMessageTracker) {
-            items.add("已读追踪")
-        }
-        if (getCookie) {
-            items.add("获取 Cookie")
-        }
-        if (getBknByCookie) {
-            items.add("获取 Bkn")
-        }
-        if (timestampTool) {
-            items.add("Timestamp Tool")
-        }
-        if (sendWhiteText) {
-            items.add("发白字")
-        }
-        if (sendLocationCard) {
-            items.add("发送位置卡片")
-        }
-        if (fakeLocationShare) {
-            items.add("发假位置共享")
-        }
-        if (getChannelArk) {
-            items.add("获取频道卡片")
-        }
-        if (jumpSchemeUri) {
-            items.add("打开 Scheme 链接")
-        }
-        if (cardFunc) {
-            items.add("卡片功能")
-        }
-        if (stealTraffic) {
-            items.add("偷流量")
-        }
-        if (bigForward) {
-            items.add("发大号聊天记录")
-        }
+        // 定义菜单分组结构
+        data class MenuItem(val label: String, val action: () -> Unit)
+        data class MenuGroup(val groupName: String, val items: List<MenuItem>)
 
-        menus.forEach { menu ->
-            if (menu.isAdd()) {
-                items.add(menu.menuName)
+        val groups = mutableListOf<MenuGroup>()
+        val devItems = mutableListOf<MenuItem>()
+        if (qqPacketHelper) devItems.add(MenuItem("QQPacketHelper") {
+            SyncUtils.runOnUiThread { PacketHelperDialog.createView(null, view.context, "") }
+        })
+        if (getCookie) devItems.add(MenuItem("获取 Cookie") {
+            SyncUtils.runOnUiThread {
+                val builder = MaterialAlertDialogBuilder(CommonContextWrapper.createAppCompatContext(view.context))
+                builder.setTitle("请输入域名")
+                val domain = EditText(CommonContextWrapper.createAppCompatContext(view.context)).apply {
+                    setHint("请输入域名")
+                    setText("qzone.qq.com")
+                }
+                builder.setView(domain)
+                builder.setNegativeButton("取消") { d, _ -> d.dismiss() }
+                builder.setPositiveButton("确定") { _, _ -> GetCookie.getCookie(view.context, domain.text.toString()) }
+                builder.show()
             }
-        }
-
+        })
+        if (getBknByCookie) devItems.add(MenuItem("获取 Bkn") {
+            SyncUtils.runOnUiThread {
+                val builder = MaterialAlertDialogBuilder(CommonContextWrapper.createAppCompatContext(view.context))
+                builder.setTitle("请输入 Cookie")
+                val cookie = EditText(CommonContextWrapper.createAppCompatContext(view.context)).apply {
+                    setHint("请输入 Cookie")
+                }
+                builder.setView(cookie)
+                builder.setNegativeButton("取消") { d, _ -> d.dismiss() }
+                builder.setPositiveButton("确定") { _, _ ->
+                    GetBknByCookie.getBkn(CommonContextWrapper.createAppCompatContext(view.context), cookie.text.toString())
+                }
+                builder.show()
+            }
+        })
+        if (timestampTool) devItems.add(MenuItem("Timestamp Tool") {
+            val item = getItem(TimestampTool::class.java)
+            if (item is IShortcutMenu) item.clickHandle(view.context)
+        })
+        if (jumpSchemeUri) devItems.add(MenuItem("打开 Scheme 链接") {
+            SyncUtils.runOnUiThread { JumpSchemeUriDialog.createView(view.context) }
+        })
         if (getItem(QQHookCodec::class.java).isEnabled) {
             if (!messageEncryptor) {
-                items.add("开启加密抄送")
+                devItems.add(MenuItem("开启加密抄送") {
+                    ConfigManager.dPutBoolean(Constants.PrekClickableXXX + getItem(MessageEncryptor::class.java).path, true)
+                })
             } else {
-                items.add("关闭加密抄送")
+                devItems.add(MenuItem("关闭加密抄送") {
+                    ConfigManager.dPutBoolean(Constants.PrekClickableXXX + getItem(MessageEncryptor::class.java).path, false)
+                })
             }
         }
+        if (devItems.isNotEmpty()) groups.add(MenuGroup("开发者选项", devItems))
 
+        val msgItems = mutableListOf<MenuItem>()
 
+        if (getChannelArk) msgItems.add(MenuItem("获取频道卡片") {
+            SyncUtils.runOnUiThread { GetChannelArkDialog.createView(view.context) }
+        })
+        if (sendWhiteText) msgItems.add(MenuItem("发白字") {
+            val item = getItem(SendWhiteText::class.java)
+            if (item is IShortcutMenu) item.clickHandle(view.context)
+        })
+        if (cardFunc) msgItems.add(MenuItem("卡片功能") {
+            val item = getItem(CardFunc::class.java)
+            if (item is IShortcutMenu) item.clickHandle(view.context)
+        })
+        if (sendLocationCard) msgItems.add(MenuItem("发送位置卡片") {
+            val item = getItem(SendLocationCard::class.java)
+            if (item is IShortcutMenu) item.clickHandle(view.context)
+        })
+        if (fakeLocationShare) msgItems.add(MenuItem("发假位置共享") {
+            val item = getItem(FakeLocationShare::class.java)
+            if (item is IShortcutMenu) item.clickHandle(view.context)
+        })
+        msgItems.add(MenuItem("匿名化"){
+            autoMosaicNameNT()
+        })
+        if (msgItems.isNotEmpty()) groups.add(MenuGroup("聊天与消息", msgItems))
 
-        items.add("匿名化")
+        val funItems = mutableListOf<MenuItem>()
+        if (stealTraffic) funItems.add(MenuItem("偷流量") {
+            val item = getItem(StealTraffic::class.java)
+            if (item is IShortcutMenu) item.clickHandle(view.context)
+        })
+        if (sendFakeFile) funItems.add(MenuItem("假文件") {
+            try { SyncUtils.runOnUiThread { FakeFileSender.createView(view.context) } }
+            catch (e: Exception) { Toasts.error(view.context, "请求失败") }
+        })
+        if (bigForward) funItems.add(MenuItem("发大号聊天记录") {
+            val item = getItem(BigForward::class.java)
+            if (item is IShortcutMenu) item.clickHandle(view.context)
+        })
+        if (funItems.isNotEmpty()) groups.add(MenuGroup("娱乐功能", funItems))
+
+        val sigmaItems = mutableListOf<MenuItem>()
+        if (qqMessageTracker) sigmaItems.add(MenuItem("已读追踪") {
+            try { SyncUtils.runOnUiThread { QQMessageTrackerDialog.createView(view.context) } }
+            catch (e: Exception) { Toasts.error(view.context, "请求失败") }
+        })
+        if (sigmaItems.isNotEmpty()) groups.add(MenuGroup("Sigma", sigmaItems))
+
+        val extItems = menus.filter { it.isAdd() }.map { menu ->
+            MenuItem(menu.menuName) { menu.clickHandle(view.context) }
+        }
+        if (extItems.isNotEmpty()) groups.add(MenuGroup("其它", extItems))
+
+        val topLevelLabels = groups.map { it.groupName }.toMutableList()
+
         XPopup.Builder(fixCtx)
             .hasShadowBg(false)
             .atView(view)
-            .asAttachList(
-                items.toTypedArray<String>(),
-                intArrayOf()
-            ) { _: Int, text: String? ->
-                menus.forEach { menu ->
-                    if (text == menu.menuName) {
-                        menu.clickHandle(view.context)
-                        return@asAttachList
+            .asAttachList(topLevelLabels.toTypedArray(), intArrayOf()) { _, text ->
+                val group = groups.find { it.groupName == text } ?: return@asAttachList
+                // 二级菜单
+                val subLabels = group.items.map { it.label }.toTypedArray()
+                XPopup.Builder(fixCtx)
+                    .hasShadowBg(false)
+                    .atView(view)
+                    .asAttachList(subLabels, intArrayOf()) { _, subText ->
+                        group.items.find { it.label == subText }?.action?.invoke()
                     }
-                }
-
-                when (text) {
-                    "QQPacketHelper" -> SyncUtils.runOnUiThread {
-                        PacketHelperDialog.createView(
-                            null,
-                            view.context,
-                            ""
-                        )
-                    }
-
-                    "匿名化" -> autoMosaicNameNT()
-                    "假文件" -> try {
-                        SyncUtils.runOnUiThread { FakeFileSender.createView(view.context) }
-                    } catch (e: Exception) {
-                        Toasts.error(view.context, "请求失败")
-                    }
-                    "已读追踪" -> try {
-                        SyncUtils.runOnUiThread { QQMessageTrackerDialog.createView(view.context) }
-                    } catch (e: Exception) {
-                        Toasts.error(view.context, "请求失败")
-                    }
-                    "开启加密抄送" -> {
-                        ConfigManager.dPutBoolean(
-                            Constants.PrekClickableXXX + getItem(
-                                MessageEncryptor::class.java
-                            ).path, true
-                        )
-                    }
-                    "关闭加密抄送" -> {
-                        ConfigManager.dPutBoolean(
-                            Constants.PrekClickableXXX + getItem(
-                                MessageEncryptor::class.java
-                            ).path, false
-                        )
-                    }
-                    "获取 Cookie" -> {
-                        SyncUtils.runOnUiThread {
-                            val builder = MaterialAlertDialogBuilder(
-                                CommonContextWrapper.createAppCompatContext(view.context)
-                            )
-
-                            builder.setTitle("请输入域名")
-
-                            val domain =
-                                EditText(CommonContextWrapper.createAppCompatContext(view.context))
-                            domain.setHint("请输入域名")
-                            domain.setText("qzone.qq.com")
-
-                            builder.setView(domain)
-
-                            builder.setNegativeButton("取消") { dialog, i ->
-                                dialog.dismiss()
-                            }
-                            builder.setPositiveButton("确定") { dialog, i ->
-                                GetCookie.getCookie(view.context, domain.text.toString())
-                            }
-
-                            builder.show()
-                        }
-                    }
-                    "获取 Bkn" -> {
-                        SyncUtils.runOnUiThread {
-                            val builder = MaterialAlertDialogBuilder(CommonContextWrapper.createAppCompatContext(view.context))
-
-                            builder.setTitle("请输入 Cookie")
-
-                            val cookie = EditText(CommonContextWrapper.createAppCompatContext(view.context))
-                            cookie.setHint("请输入 Cookie")
-
-                            builder.setView(cookie)
-
-                            builder.setNegativeButton("取消") { dialog, i ->
-                                dialog.dismiss()
-                            }
-                            builder.setPositiveButton("确定") { dialog, i ->
-                                GetBknByCookie.getBkn(CommonContextWrapper.createAppCompatContext(view.context), cookie.text.toString())
-                            }
-
-                            builder.show()
-                        }
-                    }
-                    "获取频道卡片" -> {
-                        SyncUtils.runOnUiThread { GetChannelArkDialog.createView(view.context) }
-                    }
-                    "打开 Scheme 链接" -> {
-                        SyncUtils.runOnUiThread { JumpSchemeUriDialog.createView(view.context) }
-                    }
-                    "发白字" -> {
-                        // 调用发白字功能的处理方法
-                        val sendWhiteText = getItem(SendWhiteText::class.java)
-                        if (sendWhiteText is IShortcutMenu) {
-                            sendWhiteText.clickHandle(view.context)
-                        }
-                    }
-                    "发送位置卡片" -> {
-                        // 调用发送位置卡片功能的处理方法
-                        val sendLocationCard = getItem(SendLocationCard::class.java)
-                        if (sendLocationCard is IShortcutMenu) {
-                            sendLocationCard.clickHandle(view.context)
-                        }
-                    }
-                    "发假位置共享" -> {
-                        // 调用发假位置共享功能的处理方法
-                        val fakeLocationShare = getItem(FakeLocationShare::class.java)
-                        if (fakeLocationShare is IShortcutMenu) {
-                            fakeLocationShare.clickHandle(view.context)
-                        }
-                    }
-                    "卡片功能" -> {
-                        // 调用卡片功能的处理方法
-                        val cardFunc = getItem(CardFunc::class.java)
-                        if (cardFunc is IShortcutMenu) {
-                            cardFunc.clickHandle(view.context)
-                        }
-                   }
-                    "Timestamp Tool" -> {
-                    val timestampTool = getItem(TimestampTool::class.java)
-                    if (timestampTool is IShortcutMenu) {
-                        timestampTool.clickHandle(view.context)
-                    }
-                }
-                    "偷流量" -> {
-                        val stealTraffic = getItem(StealTraffic::class.java)
-                        if (stealTraffic is IShortcutMenu) {
-                            stealTraffic.clickHandle(view.context)
-                        }
-                    }
-                    "发大号聊天记录" -> {
-                        val bigForward = getItem(BigForward::class.java)
-                        if (bigForward is IShortcutMenu) {
-                            bigForward.clickHandle(view.context)
-                        }
-                    }
-                }
-
+                    .show()
             }
             .show()
     }
