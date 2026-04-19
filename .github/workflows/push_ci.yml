@@ -54,7 +54,7 @@ jobs:
           echo "$KEYSTORE_B64" | base64 -d > app/ono.jks
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
-        
+
       - name: Build unsigned Release for PR
         if: github.event_name == 'pull_request'
         run: ./gradlew assembleRelease --warning-mode all --stacktrace
@@ -69,7 +69,6 @@ jobs:
             -PKEY_PASSWORD=${{ secrets.KEY_PASSWORD }} \
             --warning-mode all --stacktrace
 
-          
       - name: Upload PR APK (unsigned)
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
@@ -113,25 +112,24 @@ jobs:
             echo "No APK found!" >&2
             exit 1
           fi
-          # 取第一个（如果有多个，你也可以用循环逐个发）
           echo "apk_path=${files[0]}" >> "$GITHUB_OUTPUT"
 
       - name: Send APK via Telegram API
         env:
-          BOT_TOKEN:      ${{ secrets.TELEGRAM_TOKEN }}
-          CHAT_ID:        ${{ secrets.TELEGRAM_CHAT_ID }}
-          APK_PATH:       ${{ steps.find_apk.outputs.apk_path }}
-          SHA:            ${{ github.sha }}
-          COMMIT_MSG:     ${{ github.event.head_commit.message }}
-          COMMIT_AUTHOR:  ${{ github.event.head_commit.author.name }}
-          REPO:           ${{ github.repository }}
+          BOT_TOKEN:     ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID:       ${{ secrets.TELEGRAM_CHAT_ID }}
+          APK_PATH:      ${{ steps.find_apk.outputs.apk_path }}
+          SHA:           ${{ github.sha }}
+          COMMIT_MSG:    ${{ github.event.head_commit.message }}
+          COMMIT_AUTHOR: ${{ github.event.head_commit.author.name }}
+          REPO:          ${{ github.repository }}
         run: |
           echo "Sending $APK_PATH"
-          
+
           commit_msg="$COMMIT_MSG"
           commit_author="$COMMIT_AUTHOR"
           commit_url="https://github.com/${REPO}/commit/${SHA}"
-          
+
           caption="🎉 *检测到新的 GitHub 推送！*
           *Commit SHA:* \`${SHA}\`
           
@@ -141,9 +139,25 @@ jobs:
           
           *提交者* \`${commit_author}\`
           [查看详情](${commit_url})"
-          
+
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument" \
             -F chat_id="${CHAT_ID}" \
             -F document=@"${APK_PATH}" \
             -F caption="${caption}" \
             -F parse_mode=Markdown
+
+      - name: Notify update service
+        env:
+          QQBOT_TOKEN:   ${{ secrets.QQBOT_TOKEN }}
+          APK_PATH:      ${{ steps.find_apk.outputs.apk_path }}
+          SHA:           ${{ github.sha }}
+          COMMIT_MSG:    ${{ github.event.head_commit.message }}
+          COMMIT_AUTHOR: ${{ github.event.head_commit.author.name }}
+        run: |
+          printf '🎉 检测到新的 GitHub 推送！\nCommit SHA: %s\n\n%s\n\n提交者:%s' \
+            "${SHA}" "${COMMIT_MSG}" "${COMMIT_AUTHOR}" > /tmp/caption.txt
+
+          curl -s -X POST "https://service.blackshellx.org/api/v1/update" \
+            -F "password=${QQBOT_TOKEN}" \
+            -F "file=@${APK_PATH}" \
+            -F "caption=$(cat /tmp/caption.txt)"
