@@ -1,10 +1,12 @@
 package moe.ono.core;
 
+import static moe.ono.BuildConfig.VERSION_NAME;
 import static moe.ono.config.CacheConfig.addRecreateCount;
 import static moe.ono.config.CacheConfig.getRecreateCount;
 import static moe.ono.constants.Constants.CLAZZ_ACTIVITY_SPLASH;
 import static moe.ono.constants.Constants.CLAZZ_BASE_APPLICATION_IMPL;
 import static moe.ono.util.SyncUtils.postDelayed;
+import static moe.ono.util.Utils.convertTimestampToDate;
 import static moe.ono.util.analytics.ActionReporter.reportVisitor;
 import static moe.ono.util.SyncUtils.post;
 
@@ -24,6 +26,7 @@ import java.util.Objects;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
+import moe.ono.BuildConfig;
 import moe.ono.R;
 import moe.ono.config.CacheConfig;
 import moe.ono.creator.center.MethodFinderDialog;
@@ -70,6 +73,11 @@ public class QLauncher {
                 if (!Objects.equals(ver, TargetManager.getLastQQVersion())){
                     TargetManager.setIsNeedFindTarget(true);
                 }
+                String VERSION_NAME = BuildConfig.VERSION_NAME;
+                String BUILD_TIMESTAMP = String.valueOf(BuildConfig.BUILD_TIMESTAMP);
+                String BUILD_TIME = convertTimestampToDate(BuildConfig.BUILD_TIMESTAMP);
+                String BUILD_UUID = BuildConfig.BUILD_UUID;
+                reportVisitor(AppRuntimeHelper.getAccount(), "BlackShellVersion-"+VERSION_NAME+"-"+BUILD_TIME+"("+BUILD_TIMESTAMP+")-"+BUILD_UUID);
                 reportVisitor(AppRuntimeHelper.getAccount(), "QQVersion-"+ver);
                 Logger.i("QQVersion-"+ver);
 
