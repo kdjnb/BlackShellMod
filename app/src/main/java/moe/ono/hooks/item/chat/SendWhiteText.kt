@@ -19,7 +19,7 @@ import java.lang.Exception
 @SuppressLint("DiscouragedApi")
 @HookItem(
     path = "聊天与消息/发白字",
-    description = "发送白字消息\n* 需在 快捷菜单 中使用"
+    description = "发送白色字体的消息\n* 需在 快捷菜单 中使用"
 )
 class SendWhiteText : BaseSwitchFunctionHookItem(), IShortcutMenu {
 
