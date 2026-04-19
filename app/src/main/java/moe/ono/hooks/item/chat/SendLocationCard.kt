@@ -19,7 +19,7 @@ import java.lang.Exception
 @SuppressLint("DiscouragedApi")
 @HookItem(
     path = "聊天与消息/发送位置卡片",
-    description = "发送位置卡片消息\n* 需在 快捷菜单 中使用"
+    description = "发送位置 Ark 卡片消息\n* 需在 快捷菜单 中使用"
 )
 class SendLocationCard : BaseSwitchFunctionHookItem(), IShortcutMenu {
 
