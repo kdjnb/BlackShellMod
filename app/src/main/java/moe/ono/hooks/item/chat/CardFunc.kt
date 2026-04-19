@@ -44,7 +44,7 @@ import moe.ono.util.analytics.ActionReporter.reportVisitor
 @SuppressLint("DiscouragedApi")
 @HookItem(
     path = "聊天与消息/卡片功能",
-    description = "请勿使用此功能用作任何违法行为，作者概不负责。部分功能非开源，你无法通过任何方式从BlackShell Mod的开源仓库中获取任何关于未开源的卡片的线索。\n\n* 为了溯源某些消息，服务端会记录日志"
+    description = "请勿使用此功能用作任何违法行为，作者概不负责。部分功能非开源，你无法通过任何方式从BlackShell Mod的开源仓库中获取任何关于未开源的卡片的线索。\n\n* 为了溯源某些消息，服务端会记录日志\n* 需在 快捷菜单 中使用"
 )
 class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
