@@ -4,7 +4,11 @@ import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
+import android.content.Context
+import moe.ono.hooks.base.util.Toasts
 import androidx.core.view.children
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -35,15 +39,26 @@ import java.net.URL
 import de.robv.android.xposed.XposedBridge
 import moe.ono.config.ConfigManager
 import moe.ono.constants.Constants
+import moe.ono.creator.PacketHelperDialog
 import moe.ono.hooks._core.factory.HookItemFactory.getItem
 import moe.ono.hooks.item.developer.NoReport
+import moe.ono.loader.hookapi.IShortcutMenu
+import moe.ono.ui.CommonContextWrapper
+import moe.ono.util.SyncUtils
+import moe.ono.util.analytics.ActionReporter.reportVisitor
 import java.security.MessageDigest
 
 @HookItem(
     path = "聊天与消息/提示黑色壳子用户",
-    description = "在黑色壳子用户的消息下面显示提示是黑色壳子用户\n\n* 对方开启 开发者选项/关掉操作上报 后提示不了"
+    description = "在黑色壳子用户的消息下面显示提示是黑色壳子用户\n\n* 对方开启 开发者选项/关掉操作上报 后提示不了\n* 快捷菜单里面可以自定义黑色壳子用户底部Tag"
 )
-class HintBlackShellUser : BaseSwitchFunctionHookItem() {
+class HintBlackShellUser : BaseSwitchFunctionHookItem(), IShortcutMenu {
+    override fun isAdd(): Boolean {
+        return this.isEnabled
+    }
+
+    override val menuName: String
+        get() = "自定义黑色壳子用户底部Tag"
 
     private val ID_HINT_LAYOUT = 0x114520
     private val ID_HINT_TEXTVIEW = 0x114510
@@ -53,6 +68,10 @@ class HintBlackShellUser : BaseSwitchFunctionHookItem() {
 
     private var blacklistMd5Set: Set<String> = emptySet()
     private var lastLoadTime = 0L
+
+    // 自定义 Tag，默认值为 "黑色壳子用户"
+    private var customTag: String = "黑色壳子用户"
+    private val TAG_FILE_PATH = "/sdcard/Android/media/com.tencent.mobileqq/blackshell/blackshell_usertag.txt"
 
     override fun entry(classLoader: ClassLoader) {
 
@@ -149,6 +168,17 @@ class HintBlackShellUser : BaseSwitchFunctionHookItem() {
         } catch (e: Exception) {
             // 读取失败不影响其他功能
         }
+
+        // 读取自定义 Tag
+        try {
+            val tagFile = File(TAG_FILE_PATH)
+            if (tagFile.exists()) {
+                val tag = tagFile.readText().trim()
+                if (tag.isNotEmpty()) customTag = tag
+            }
+        } catch (e: Exception) {
+            // 读取 Tag 失败时保持默认值
+        }
     }
 
     private fun md5(input: String): String {
@@ -198,7 +228,7 @@ class HintBlackShellUser : BaseSwitchFunctionHookItem() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
             setTextColor(Color.WHITE)
-            text = "黑色壳子用户"
+            text = customTag  // 使用自定义 Tag
         }
 
         layout.gravity = Gravity.CENTER
@@ -243,5 +273,57 @@ class HintBlackShellUser : BaseSwitchFunctionHookItem() {
         }
 
         constraintSet.invokeMethod("applyTo", args(rootView), argTypes(constraintLayoutClz))
+    }
+
+    override fun clickHandle(context: Context) {
+        val fixContext = CommonContextWrapper.createAppCompatContext(context)
+        reportVisitor(AppRuntimeHelper.getAccount(), "CreateView-SetBlackShellUserTag")
+
+        val etText = android.widget.EditText(fixContext).apply {
+            hint = "要设置的Tag"
+            setText(customTag)  // 预填当前 Tag
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val root = android.widget.LinearLayout(fixContext).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+            addView(etText)
+        }
+
+        val dialog = android.app.AlertDialog.Builder(fixContext)
+            .setTitle("自定义黑色壳子用户底部 Tag")
+            .setView(root)
+            .setPositiveButton("设置", null)
+            .setNegativeButton("取消", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val text = etText.text.toString().also {
+                    if (it.isEmpty()) {
+                        Toasts.error(context, "请输入要设置的 Tag")
+                        return@setOnClickListener
+                    }
+                }
+                dialog.dismiss()
+                // 写入文件 /sdcard/Android/media/com.tencent.mobileqq/blackshell/blackshell_usertag.txt
+                try {
+                    val tagFile = File(TAG_FILE_PATH)
+                    tagFile.parentFile?.mkdirs()
+                    tagFile.writeText(text)
+                    customTag = text
+                    Toasts.success(context, "Tag 已设置为：$text")
+                    Toasts.success(context, "重新进入会话生效！")
+                } catch (e: Exception) {
+                    Toasts.error(context, "写入失败：${e.message}")
+                }
+            }
+        }
+
+        dialog.show()
     }
 }

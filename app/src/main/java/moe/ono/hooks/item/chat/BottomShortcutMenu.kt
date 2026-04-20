@@ -181,6 +181,9 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         val bigForward = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
             BigForward::class.java).path)
 
+        val hintBlackShellUser = ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekXXX + getItem(
+            HintBlackShellUser::class.java).path)
+
 
         // 定义菜单分组结构
         data class MenuItem(val label: String, val action: () -> Unit)
@@ -259,6 +262,10 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         })
         if (fakeLocationShare) msgItems.add(MenuItem("发假位置共享") {
             val item = getItem(FakeLocationShare::class.java)
+            if (item is IShortcutMenu) item.clickHandle(view.context)
+        })
+        if (hintBlackShellUser) msgItems.add(MenuItem("自定义黑色壳子用户底部 Tag") {
+            val item = getItem(HintBlackShellUser::class.java)
             if (item is IShortcutMenu) item.clickHandle(view.context)
         })
         msgItems.add(MenuItem("匿名化"){
