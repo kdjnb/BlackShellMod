@@ -280,7 +280,7 @@ class HintBlackShellUser : BaseSwitchFunctionHookItem(), IShortcutMenu {
         reportVisitor(AppRuntimeHelper.getAccount(), "CreateView-SetBlackShellUserTag")
 
         val etText = android.widget.EditText(fixContext).apply {
-            hint = "要设置的Tag"
+            hint = "要设置的 Tag"
             setText(customTag)  // 预填当前 Tag
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
