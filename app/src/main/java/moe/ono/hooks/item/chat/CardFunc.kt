@@ -39,6 +39,13 @@ import java.security.MessageDigest
 import com.tencent.qphone.base.remote.FromServiceMsg
 import com.tencent.qphone.base.remote.ToServiceMsg
 import moe.ono.util.analytics.ActionReporter.reportVisitor
+import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.view.LayoutInflater
+import android.widget.Button
+import android.widget.TextView
+import moe.ono.R
 
 
 @SuppressLint("DiscouragedApi")
@@ -1733,6 +1740,43 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         dialog.show()
     }
 
+    private fun showArkConfirmDialog(context: Context, arkJson: String) {
+        val dialog = AlertDialog.Builder(context).create()
+        val view = LayoutInflater.from(context).inflate(R.layout.dialog_ark_preview, null)
+        dialog.setView(view)
+        dialog.setCancelable(false)
+
+        view.findViewById<TextView>(R.id.tv_ark_content).text = try {
+            JSONObject(arkJson).toString(2)
+        } catch (e: Exception) {
+            arkJson
+        }
+
+        // 关闭
+        view.findViewById<Button>(R.id.btn_close).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // 复制
+        view.findViewById<Button>(R.id.btn_copy).setOnClickListener {
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText("Ark", arkJson))
+            Toasts.success(context, "已复制到剪贴板")
+        }
+
+        // 发送
+        view.findViewById<Button>(R.id.btn_send).setOnClickListener {
+            dialog.dismiss()
+            PacketHelperDialog.createView(null, context, arkJson)
+            PacketHelperDialog.setSendTypeToArk()
+            Handler(Looper.getMainLooper()).postDelayed({
+                PacketHelperDialog.performAutoSend(context)
+            }, 100)
+        }
+
+        dialog.show()
+    }
+
     private fun sendGshopCardRequest(
         context: Context,
         password: String,
@@ -1818,16 +1862,8 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
 
                     val arkJson = arkObj.toString()
 
-                    // 在主线程中处理返回的ark数据
                     SyncUtils.runOnUiThread {
-                        // 自动打开PacketHelper
-                        PacketHelperDialog.createView(null, context, arkJson)
-                        // 自动切换到ark发送模式
-                        PacketHelperDialog.setSendTypeToArk()
-                        // 等待100ms后自动点击发送
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            PacketHelperDialog.performAutoSend(context)
-                        }, 100)
+                        showArkConfirmDialog(context, arkJson)
                     }
 
                 } catch (e: Exception) {
