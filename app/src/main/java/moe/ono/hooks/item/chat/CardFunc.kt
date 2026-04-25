@@ -1792,7 +1792,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
             // 将产品列表转换为JSONArray
             val productsArray = org.json.JSONArray()
             products.forEach { product ->
-                val productJson = org.json.JSONObject().apply {
+                val productJson = JSONObject().apply {
                     put("img", product.img)
                     put("ori_price", product.ori_price)
                     put("price", product.price)
