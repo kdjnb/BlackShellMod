@@ -271,7 +271,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
             if (!file.exists()) {
                 writeDebugLog("授权码文件不存在: ${file.absolutePath}")
                 SyncUtils.runOnUiThread {
-                    Toasts.error(context, "去找嘿壳获取授权码吧...")
+                    Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
                 }
                 null
             } else {
@@ -378,7 +378,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.error(context, "不对劲")
+            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
             return
         }
 
@@ -471,7 +471,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.error(context, "hacker不让你用")
+            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
             return
         }
 
@@ -564,7 +564,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.error(context, "hacker不让你用")
+            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
             return
         }
 
@@ -847,7 +847,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.error(context, "不对劲")
+            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
             return
         }
 
@@ -1029,7 +1029,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.error(context, "不对劲")
+            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
             return
         }
 
@@ -1217,7 +1217,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.error(context, "不对劲")
+            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
             return
         }
 
@@ -1581,7 +1581,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
 
         if (readPassFromFile(context) == null) {
-            Toasts.error(context, "hacker不让你用")
+            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
             return
         }
 
@@ -1843,7 +1843,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
 
         if (readPassFromFile(context) == null) {
-            Toasts.error(context, "hacker不让你用")
+            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
             return
         }
 
@@ -1921,7 +1921,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
             btnText: String
         ) {
             val password = readPassFromFile(context) ?: run {
-                Toasts.error(context, "授权码无效")
+                Toasts.popup("授权码无效")
                 return
             }
     
@@ -2022,7 +2022,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
 
         if (readPassFromFile(context) == null) {
-            Toasts.error(context, "hacker不让你用")
+            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
             return
         }
 
@@ -2098,7 +2098,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         tagIcon: String,
     ) {
         val password = readPassFromFile(context) ?: run {
-            Toasts.error(context, "授权码无效")
+            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
             return
         }
 
