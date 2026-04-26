@@ -23,7 +23,7 @@ import java.util.*
 @SuppressLint("DiscouragedApi")
 @HookItem(
     path = "聊天与消息/一键转超级QQ秀表情",
-    description = "长按图片或表情 → 转超表，别强求所有人都能用，至少9.2.27用不了。。。"
+    description = "长按图片或表情 → 转超表，别强求所有人都能用，9266+实测可用，低版本未知"
 )
 class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
 
@@ -83,18 +83,17 @@ class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
         } catch (_: Exception) {}
     }
 
-    /**
-     * 提取 PicElement：
-     * PicMsgItem.i1 是 SynchronizedLazyImpl，_value 就是 PicElement
-     * 同时兜底遍历所有字段找 PicElement 类型
-     */
-    private fun extractMsgDataFromMsg(msgRecord: Any): Map<*, *>? {
-        return runCatching {
-            writeDebugLog("msgRecord类型: ${msgRecord.javaClass.name}")
+    // ========== PicElement 提取 ==========
 
-            // 优先路径：i1 -> Lazy._value -> PicElement（高版本已确认）
-            val picElement = extractPicElementFromLazyField(msgRecord, "i1")
-                ?: extractPicElementByTraversal(msgRecord)
+    private fun extractMsgDataFromMsg(obj: Any): Map<*, *>? {
+        return runCatching {
+            writeDebugLog("msgRecord类型: ${obj.javaClass.name}")
+
+            // 路径1：旧版 PicMsgItem.i1(Lazy) -> PicElement
+            val picElement =
+                extractPicElementFromLazyField(obj, "i1")
+                // 路径2：新版 AIOMsgItem.e/f1(MsgRecord) -> elements -> MsgElement.picElement
+                    ?: extractPicElementFromMsgRecord(obj)
 
             if (picElement != null) {
                 writeDebugLog("成功获取PicElement: ${picElement.javaClass.name}")
@@ -108,21 +107,17 @@ class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
         }.getOrNull()
     }
 
-    /** 从指定 Lazy 字段名解包拿 PicElement */
+    /** 路径1：从指定 Lazy 字段解包取 PicElement，供旧版使用 */
     private fun extractPicElementFromLazyField(obj: Any, fieldName: String): Any? {
         return runCatching {
             val field = obj.javaClass.getDeclaredField(fieldName)
             field.isAccessible = true
             val lazy = field.get(obj) ?: return@runCatching null
-
-            // 解包 Lazy
             val valueField = lazy.javaClass.getDeclaredField("_value")
             valueField.isAccessible = true
             val value = valueField.get(lazy) ?: return@runCatching null
-
-            // 确认是 PicElement
             if (value.javaClass.name.contains("PicElement", ignoreCase = true)) {
-                writeDebugLog("通过字段[$fieldName]._value 获取到PicElement")
+                writeDebugLog("路径1命中: [$fieldName]._value")
                 value
             } else null
         }.onFailure {
@@ -130,76 +125,75 @@ class SuperQQShowConverter : BaseSwitchFunctionHookItem(), OnMenuBuilder {
         }.getOrNull()
     }
 
-    /** 兜底：遍历所有字段（含父类），找类名包含 PicElement 的 */
-    private fun extractPicElementByTraversal(obj: Any): Any? {
+    /**
+     * 路径2：遍历继承链，找 MsgRecord 类型字段，
+     * 再从 MsgRecord.elements(List<MsgElement>) 中取 picElement
+     */
+    private fun extractPicElementFromMsgRecord(obj: Any): Any? {
         return runCatching {
             var cls: Class<*>? = obj.javaClass
             while (cls != null && cls != Any::class.java) {
                 for (field in cls.declaredFields) {
                     if (field.name.startsWith("$")) continue
                     field.isAccessible = true
-                    val raw = runCatching { field.get(obj) }.getOrNull() ?: continue
+                    val value = runCatching { field.get(obj) }.getOrNull() ?: continue
+                    if (!value.javaClass.name.contains("MsgRecord", ignoreCase = true)) continue
 
-                    // 直接是 PicElement
-                    if (raw.javaClass.name.contains("PicElement", ignoreCase = true)) {
-                        writeDebugLog("兜底遍历：字段[${field.name}]直接命中PicElement")
-                        return@runCatching raw
-                    }
+                    writeDebugLog("路径2: 找到MsgRecord字段[${field.name}]")
+                    val elements = extractElementsList(value) ?: continue
 
-                    // Lazy 包装的 PicElement
-                    if (raw.javaClass.simpleName.contains("Lazy", ignoreCase = true)) {
-                        val inner = runCatching {
-                            val vf = raw.javaClass.getDeclaredField("_value")
-                            vf.isAccessible = true
-                            vf.get(raw)
+                    for (element in elements) {
+                        val pic = runCatching {
+                            val pf = element.javaClass.getDeclaredField("picElement")
+                            pf.isAccessible = true
+                            pf.get(element)
                         }.getOrNull() ?: continue
-                        if (inner.javaClass.name.contains("PicElement", ignoreCase = true)) {
-                            writeDebugLog("兜底遍历：字段[${field.name}](Lazy)命中PicElement")
-                            return@runCatching inner
-                        }
-                    }
-
-                    // MsgElement 内部的 picElement 子字段
-                    if (raw.javaClass.name.contains("MsgElement", ignoreCase = true)) {
-                        val sub = runCatching {
-                            val sf = raw.javaClass.getDeclaredField("picElement")
-                            sf.isAccessible = true
-                            sf.get(raw)
-                        }.getOrNull()
-                        if (sub != null && sub.javaClass.name.contains("PicElement", ignoreCase = true)) {
-                            writeDebugLog("兜底遍历：字段[${field.name}].picElement 命中")
-                            return@runCatching sub
+                        if (pic.javaClass.name.contains("PicElement", ignoreCase = true)) {
+                            writeDebugLog("路径2命中: MsgRecord[${field.name}].elements[].picElement")
+                            return@runCatching pic
                         }
                     }
                 }
                 cls = cls.superclass
             }
+            writeDebugLog("路径2: 未命中")
             null
         }.onFailure {
-            writeDebugLog("extractPicElementByTraversal异常: ${it.message}")
+            writeDebugLog("extractPicElementFromMsgRecord异常: ${it.message}")
         }.getOrNull()
     }
 
-    // ========== d1 / d2 / d3 提取 ==========
-    // 已确认字段名：md5HexStr / fileName / fileUuid
-
-    private fun extractD1FromMsg(msg: Map<*, *>): String? {
-        return extractStringField(msg, "md5HexStr").also {
-            writeDebugLog("d1(md5HexStr) = $it")
+    /** 从 MsgRecord 对象里按类型找 List<MsgElement> */
+    private fun extractElementsList(msgRecord: Any): List<Any>? {
+        var cls: Class<*>? = msgRecord.javaClass
+        while (cls != null && cls != Any::class.java) {
+            for (field in cls.declaredFields) {
+                field.isAccessible = true
+                val value = runCatching { field.get(msgRecord) }.getOrNull() ?: continue
+                if (value !is List<*> || value.isEmpty()) continue
+                val first = value.firstOrNull() ?: continue
+                if (first.javaClass.name.contains("MsgElement", ignoreCase = true)) {
+                    writeDebugLog("找到elements字段[${field.name}], size=${value.size}")
+                    @Suppress("UNCHECKED_CAST")
+                    return value as List<Any>
+                }
+            }
+            cls = cls.superclass
         }
+        writeDebugLog("未找到elements列表")
+        return null
     }
 
-    private fun extractD2FromMsg(msg: Map<*, *>): String? {
-        return extractStringField(msg, "fileName").also {
-            writeDebugLog("d2(fileName) = $it")
-        }
-    }
+    // ========== d1 / d2 / d3 提取（字段名已确认）==========
 
-    private fun extractD3FromMsg(msg: Map<*, *>): String? {
-        return extractStringField(msg, "fileUuid").also {
-            writeDebugLog("d3(fileUuid) = $it")
-        }
-    }
+    private fun extractD1FromMsg(msg: Map<*, *>): String? =
+        extractStringField(msg, "md5HexStr").also { writeDebugLog("d1=$it") }
+
+    private fun extractD2FromMsg(msg: Map<*, *>): String? =
+        extractStringField(msg, "fileName").also { writeDebugLog("d2=$it") }
+
+    private fun extractD3FromMsg(msg: Map<*, *>): String? =
+        extractStringField(msg, "fileUuid").also { writeDebugLog("d3=$it") }
 
     private fun extractStringField(msg: Map<*, *>, vararg names: String): String? {
         val picElement = msg["picElement"] ?: return null
