@@ -65,7 +65,7 @@ class BigForward : BaseSwitchFunctionHookItem(), IShortcutMenu {
         val etTitle = createEdit("标题","标题")
         val etDesc  = createEdit("简介","简介")
         val etTag  = createEdit("Tag","Tag")
-        val etResid  = createEdit("resid","QYIDZw1tRpT6aDw1TdROJ+j6Y28MTbEV9tbZLagbWS+iwW5qQ5lfGBi9o+D8WEWQ")
+        val etResid  = createEdit("resid","aPFVh2DJBVPCBh9RMzNmk8BKxZJ1RYRB/vHgN1m7/DJWO7RYlZml9UGcmj5HJWjO")
 
         val root = LinearLayout(fixContext).apply {
             orientation = LinearLayout.VERTICAL
