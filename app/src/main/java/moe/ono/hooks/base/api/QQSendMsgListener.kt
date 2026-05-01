@@ -1,6 +1,7 @@
 package moe.ono.hooks.base.api
 
 import android.text.TextUtils
+import com.tencent.qqnt.kernel.nativeinterface.MsgAttributeInfo
 import com.tencent.qqnt.kernel.nativeinterface.MsgElement
 import de.robv.android.xposed.XC_MethodHook
 import moe.ono.config.ONOConf
@@ -18,9 +19,18 @@ class QQSendMsgListener : ApiHookItem() {
 
         hookBefore(sendMsgMethod) { param ->
             val elements = param.args[2] as ArrayList<MsgElement>
+            val attributeInfos = param.args[3] as java.util.HashMap<Integer, MsgAttributeInfo>
 
             for (listener in listeners) {
                 listener(param, elements)
+            }
+
+            for (attributeInfoListener in attributeInfoListeners) {
+                attributeInfoListener(param, attributeInfos)
+            }
+
+            for (allListener in allListeners) {
+                allListener(param, elements, attributeInfos)
             }
 
             if (ONOConf.getBoolean("global", "sticker_panel_set_ch_change_title", false)) {
@@ -40,5 +50,7 @@ class QQSendMsgListener : ApiHookItem() {
 
     companion object {
         val listeners = mutableListOf<(param: XC_MethodHook.MethodHookParam, elems: ArrayList<MsgElement>) -> Unit>()
+        val attributeInfoListeners = mutableListOf<(param: XC_MethodHook.MethodHookParam, attributeInfos: HashMap<Integer, MsgAttributeInfo>) -> Unit>()
+        val allListeners = mutableListOf<(param: XC_MethodHook.MethodHookParam, elems: ArrayList<MsgElement>, attributeInfos: HashMap<Integer, MsgAttributeInfo>) -> Unit>()
     }
 }
