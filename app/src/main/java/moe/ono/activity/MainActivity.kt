@@ -179,6 +179,9 @@ class MainActivity : AppCompatTransferActivity() {
             R.id.cv_github -> {
                 jump(this, "https://github.com/kdjnb/BlackShellMod")
             }
+            R.id.cv_sponsor -> {
+                jump(this, "https://natsuri.top")
+            }
         }
     }
 

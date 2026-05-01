@@ -75,9 +75,10 @@
         android:key="about_category"
         android:title="关于">
         <Preference
-            android:title="版本"
-            app:key="version"
-            app:summary="N/A" />
+            android:title="强行停止QQ进程"
+            app:key="stop"
+            app:summary="点击强行停止QQ进程" />
+
         <Preference
             android:title="迪克"
             app:key="author"
@@ -85,13 +86,13 @@
 
         <Preference
             android:title="卡片功能授权码获取"
-            app:key="password"
+            app:key="sponsor"
             app:summary="点击前往赞助网页" />
 
         <Preference
-            android:title="强行停止QQ进程"
-            app:key="stop"
-            app:summary="点击强行停止QQ进程" />
+            android:title="版本"
+            app:key="version"
+            app:summary="N/A" />
 
         <Preference
             android:title="编译时间"

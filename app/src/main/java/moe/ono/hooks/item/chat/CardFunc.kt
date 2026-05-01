@@ -278,7 +278,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
             if (!file.exists()) {
                 writeDebugLog("授权码文件不存在: ${file.absolutePath}")
                 SyncUtils.runOnUiThread {
-                    Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
+                    Toasts.popup("未检测到有效授权码！\n请前往natsuri.top购买")
                 }
                 null
             } else {
@@ -385,7 +385,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
+            Toasts.popup("未检测到有效授权码！\n请前往natsuri.top购买")
             return
         }
 
@@ -478,7 +478,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
+            Toasts.popup("未检测到有效授权码！\n请前往natsuri.top购买")
             return
         }
 
@@ -571,7 +571,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
+            Toasts.popup("未检测到有效授权码！\n请前往natsuri.top购买")
             return
         }
 
@@ -854,7 +854,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
+            Toasts.popup("未检测到有效授权码！\n请前往natsuri.top购买")
             return
         }
 
@@ -1036,7 +1036,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
+            Toasts.popup("未检测到有效授权码！\n请前往natsuri.top购买")
             return
         }
 
@@ -1224,7 +1224,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val peerid: String = getCurrentPeerID()
 
         if (readPassFromFile(context) == null) {
-            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
+            Toasts.popup("未检测到有效授权码！\n请前往natsuri.top购买")
             return
         }
 
@@ -1588,7 +1588,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
 
         if (readPassFromFile(context) == null) {
-            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
+            Toasts.popup("未检测到有效授权码！\n请前往natsuri.top购买")
             return
         }
 
@@ -1879,7 +1879,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
 
         if (readPassFromFile(context) == null) {
-            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
+            Toasts.popup("未检测到有效授权码！\n请前往natsuri.top购买")
             return
         }
 
@@ -2058,7 +2058,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         val fixContext = CommonContextWrapper.createAppCompatContext(context)
 
         if (readPassFromFile(context) == null) {
-            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
+            Toasts.popup("未检测到有效授权码！\n请前往natsuri.top购买")
             return
         }
 
@@ -2134,7 +2134,7 @@ class CardFunc : BaseSwitchFunctionHookItem(), IShortcutMenu, IRespHandler {
         tagIcon: String,
     ) {
         val password = readPassFromFile(context) ?: run {
-            Toasts.popup("去找嘿壳获取授权码吧...\n你似乎需要进入这个群：\n1076550424")
+            Toasts.popup("未检测到有效授权码！\n请前往natsuri.top购买")
             return
         }
 

@@ -67,6 +67,7 @@ import moe.ono.hooks.item.chat.QQBubbleRedirect
 import moe.ono.hooks.item.chat.SelfMessageReactor
 import moe.ono.hooks.item.developer.QQPacketHelperEntry
 import moe.ono.hooks.item.entertainment.FuckSport
+import moe.ono.util.SyncUtils
 
 open class OUOSettingActivity : BaseActivity() {
     private var mAppBarLayoutHeight: Int = 0
@@ -223,8 +224,8 @@ open class OUOSettingActivity : BaseActivity() {
                     jump(requireContext(), "https://github.com/kdjnb/BlackShellMod")
                     return super.onPreferenceTreeClick(preference)
                 }
-                "password" -> {
-                    jump(requireContext(), "https://4mc.top/hacker.html")
+                "sponsor" -> {
+                    jump(requireContext(), "https://natsuri.top")
                     return super.onPreferenceTreeClick(preference)
                 }
                 "stop" -> {
@@ -240,7 +241,18 @@ open class OUOSettingActivity : BaseActivity() {
                         .show()
                     return super.onPreferenceTreeClick(preference)
                 }
-                "build_time", "build_uuid", "version","prek_enable_log", "hook_priority","author" -> {
+                "author" -> {
+//                    SyncUtils.runOnUiThread {
+//                        Toasts.popup("")
+//                    }
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("嘿壳")
+                        .setMessage("官群：1076550424\nCI群：1087280794\nTG频道：@bsmodx\n作者QQ：2569507513")
+                        .setPositiveButton("确定",null)
+                        .show()
+                    return super.onPreferenceTreeClick(preference)
+                }
+                "build_time", "build_uuid", "version","prek_enable_log", "hook_priority" -> {
                     return super.onPreferenceTreeClick(preference)
                 }
             }
