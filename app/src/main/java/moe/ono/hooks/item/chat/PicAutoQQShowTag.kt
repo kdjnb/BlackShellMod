@@ -5,7 +5,7 @@ import moe.ono.hooks._base.BaseSwitchFunctionHookItem
 import moe.ono.hooks._core.annotation.HookItem
 import moe.ono.hooks.base.api.QQSendMsgListener
 
-@HookItem(path = "聊天与消息/发送图片自动转为超表", description = "发送图片自动转为超级QQ秀表情")
+@HookItem(path = "聊天与消息/发送图片自动转为超表", description = "发送图片自动转为超级QQ秀表情 可能不能用了")
 class PicAutoQQShowTag : BaseSwitchFunctionHookItem(){
     override fun entry(classLoader: ClassLoader){
         QQSendMsgListener.listeners.add{_,elems ->
