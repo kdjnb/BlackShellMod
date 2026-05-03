@@ -129,6 +129,8 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
     }
 
     private fun popMenu(fixCtx: Context, view: View) {
+        val disableSecondMenu = ConfigManager.dGetBoolean(Constants.PrekClickableXXX + getItem(BottomShortcutMenu::class.java).path + "-disableSecondMenu")
+
         val sendFakeFile =
             ConfigManager.getDefaultConfig().getBooleanOrFalse(Constants.PrekSendFakeFile)
         val qqPacketHelper = ConfigManager.getDefaultConfig().getBooleanOrFalse(
@@ -292,24 +294,34 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
         }
         if (extItems.isNotEmpty()) groups.add(MenuGroup("其它", extItems))
 
-        val topLevelLabels = groups.map { it.groupName }.toMutableList()
-
-        XPopup.Builder(fixCtx)
-            .hasShadowBg(false)
-            .atView(view)
-            .asAttachList(topLevelLabels.toTypedArray(), intArrayOf()) { _, text ->
-                val group = groups.find { it.groupName == text } ?: return@asAttachList
-                // 二级菜单
-                val subLabels = group.items.map { it.label }.toTypedArray()
-                XPopup.Builder(fixCtx)
-                    .hasShadowBg(false)
-                    .atView(view)
-                    .asAttachList(subLabels, intArrayOf()) { _, subText ->
-                        group.items.find { it.label == subText }?.action?.invoke()
-                    }
-                    .show()
-            }
-            .show()
+        if (disableSecondMenu) {
+            val flatItems = groups.flatMap { it.items }
+            val flatLabels = flatItems.map { it.label }.toTypedArray()
+            XPopup.Builder(fixCtx)
+                .hasShadowBg(false)
+                .atView(view)
+                .asAttachList(flatLabels, intArrayOf()) { _, text ->
+                    flatItems.find { it.label == text }?.action?.invoke()
+                }
+                .show()
+        } else {
+            val topLevelLabels = groups.map { it.groupName }.toMutableList()
+            XPopup.Builder(fixCtx)
+                .hasShadowBg(false)
+                .atView(view)
+                .asAttachList(topLevelLabels.toTypedArray(), intArrayOf()) { _, text ->
+                    val group = groups.find { it.groupName == text } ?: return@asAttachList
+                    val subLabels = group.items.map { it.label }.toTypedArray()
+                    XPopup.Builder(fixCtx)
+                        .hasShadowBg(false)
+                        .atView(view)
+                        .asAttachList(subLabels, intArrayOf()) { _, subText ->
+                            group.items.find { it.label == subText }?.action?.invoke()
+                        }
+                        .show()
+                }
+                .show()
+        }
     }
 
 
@@ -456,6 +468,21 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                 }
             }
             layout.addView(checkBox)
+
+            val disableSecondMenuCheckBox = MaterialCheckBox(fixContext).apply {
+                text = "关闭二级菜单"
+                isChecked = ConfigManager.dGetBoolean(
+                    Constants.PrekClickableXXX + getItem(BottomShortcutMenu::class.java).path + "-disableSecondMenu"
+                )
+                setOnCheckedChangeListener { _, p1 ->
+                    ConfigManager.dPutBoolean(
+                        Constants.PrekClickableXXX + getItem(BottomShortcutMenu::class.java).path + "-disableSecondMenu",
+                        p1
+                    )
+//                    Toasts.success(fixContext, "重启生效")
+                }
+            }
+            layout.addView(disableSecondMenuCheckBox)
 
             val tips = listOf(
                 "点击聊天界面下方泡泡消息按钮调出菜单",
