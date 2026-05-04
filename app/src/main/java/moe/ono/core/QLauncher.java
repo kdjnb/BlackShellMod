@@ -42,6 +42,7 @@ import moe.ono.util.AppRuntimeHelper;
 import moe.ono.util.Initiator;
 import moe.ono.util.Logger;
 import moe.ono.util.SyncUtils;
+import moe.ono.util.analytics.ActionReporter;
 
 public class QLauncher {
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -67,6 +68,8 @@ public class QLauncher {
         XposedHelpers.findAndHookMethod(CLAZZ_ACTIVITY_SPLASH, cl, "beforeDoOnCreate", new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                ActionReporter.init();
+                ActionReporter.setCurrentActivity((Activity) param.thisObject);
                 CacheConfig.setSplashActivity((Activity) param.thisObject);
 
                 String ver = PlatformUtils.INSTANCE.getQQVersion(context);

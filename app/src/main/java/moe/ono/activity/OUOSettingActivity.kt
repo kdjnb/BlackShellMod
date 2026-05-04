@@ -68,6 +68,7 @@ import moe.ono.hooks.item.chat.SelfMessageReactor
 import moe.ono.hooks.item.developer.QQPacketHelperEntry
 import moe.ono.hooks.item.entertainment.FuckSport
 import moe.ono.util.SyncUtils
+import moe.ono.util.analytics.ActionReporter
 
 open class OUOSettingActivity : BaseActivity() {
     private var mAppBarLayoutHeight: Int = 0
@@ -239,6 +240,10 @@ open class OUOSettingActivity : BaseActivity() {
                         }
                         .setNegativeButton("取消", null)
                         .show()
+                    return super.onPreferenceTreeClick(preference)
+                }
+                "showEulaDialog" -> {
+                    ActionReporter.showEulaDialog()
                     return super.onPreferenceTreeClick(preference)
                 }
                 "author" -> {

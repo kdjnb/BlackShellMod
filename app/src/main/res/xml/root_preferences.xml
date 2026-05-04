@@ -82,7 +82,12 @@
         <Preference
             android:title="迪克"
             app:key="author"
-            app:summary="By 𝚊𝚠𝚊  部分卡片由𝓝𝓪𝓬𝓱𝓸提供" />
+            app:summary="By NatSuri  部分卡片由𝓝𝓪𝓬𝓱𝓸提供" />
+
+        <Preference
+            android:title="重选"
+            app:key="showEulaDialog"
+            app:summary="点击再次弹出用户协议同意弹窗" />
 
         <Preference
             android:title="卡片功能授权码获取"
