@@ -17,6 +17,7 @@ import com.lxj.xpopup.XPopup
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XC_MethodHook.MethodHookParam
 import de.robv.android.xposed.XposedHelpers
+import moe.ono.R
 import moe.ono.bridge.ntapi.ChatTypeConstants
 import moe.ono.config.CacheConfig
 import moe.ono.config.ConfigManager
@@ -62,7 +63,10 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
 
     private fun hook() {
         try {
-            if (ConfigManager.dGetInt(Constants.PrekCfgXXX + "bottom_shortcut_menu_mode", 0) == 1) {
+            val mode = ConfigManager.dGetInt(Constants.PrekCfgXXX + "bottom_shortcut_menu_mode", 0)
+
+            if (mode == 1) {
+                // 模式1：长按红包按钮
                 val method = XMethod.clz(Constants.CLAZZ_PANEL_ICON_LINEAR_LAYOUT).ret(
                     ImageView::class.java
                 ).ignoreParam().get()
@@ -83,7 +87,71 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                         }
                     }
                 }
+            } else if (mode == 2) {
+                // 模式2：泡泡消息（BlackShellMod图标）—— 将泡泡消息 ImageView 替换为 ic_ouo 图标
+                val method = TargetManager.requireMethod(Constants.MethodCacheKey_ChatPanelBtn)
+                hookAfter(method) { param: MethodHookParam? ->
+                    val layout = param!!.thisObject as LinearLayout
+                    if (Session.getContact().chatType != ChatTypeConstants.C2C && Session.getContact().chatType != ChatTypeConstants.GROUP) return@hookAfter
+                    if (!this.isEnabled) return@hookAfter
+                    for (i in 0..<layout.childCount) {
+                        val child = layout.getChildAt(i)
+                        if (child is ImageView && child.contentDescription != null) {
+                            if ("泡泡".contentEquals(child.contentDescription)) {
+                                child.addOnAttachStateChangeListener(object :
+                                    View.OnAttachStateChangeListener {
+                                    private val BLACKSHELL_TAG = "blackshell_image_tag"
+                                    override fun onViewAttachedToWindow(v: View) {
+                                        v.post {
+                                            val parent = v.parent as? ViewGroup ?: return@post
+
+                                            if ((0 until parent.childCount).any {
+                                                    parent.getChildAt(it).tag == BLACKSHELL_TAG
+                                                }) return@post
+
+                                            // 记录泡泡 ImageView 在父容器中的位置
+                                            val bubbleIndex = (0 until parent.childCount).indexOfFirst {
+                                                parent.getChildAt(it) == v
+                                            }
+
+                                            // 复制原泡泡 ImageView 的 LayoutParams
+                                            val layoutParams = LinearLayout.LayoutParams(
+                                                v.layoutParams.width,
+                                                v.layoutParams.height
+                                            )
+                                            if (v.layoutParams is LinearLayout.LayoutParams) {
+                                                val srcLp = v.layoutParams as LinearLayout.LayoutParams
+                                                layoutParams.weight = srcLp.weight
+                                                layoutParams.gravity = srcLp.gravity
+                                            }
+
+                                            val onoImageView = ImageView(parent.context).apply {
+                                                setImageResource(R.drawable.ic_ouo)
+                                                tag = BLACKSHELL_TAG
+                                                contentDescription = "BlackShellMod"
+                                                this.layoutParams = layoutParams
+                                                setOnClickListener { clickedView ->
+                                                    popMenu(
+                                                        CommonContextWrapper.createAppCompatContext(clickedView.context),
+                                                        view = clickedView
+                                                    )
+                                                }
+                                            }
+
+                                            // 移除原泡泡 ImageView，在同一位置插入图标
+                                            parent.removeView(v)
+                                            val insertIndex = if (bubbleIndex in 0..parent.childCount) bubbleIndex else parent.childCount
+                                            parent.addView(onoImageView, insertIndex)
+                                        }
+                                    }
+                                    override fun onViewDetachedFromWindow(p0: View) {}
+                                })
+                            }
+                        }
+                    }
+                }
             } else {
+                // 模式0（默认）：点击泡泡消息按钮调出菜单
                 val method = TargetManager.requireMethod(Constants.MethodCacheKey_ChatPanelBtn)
                 hookAfter(method) { param: MethodHookParam? ->
                     val layout = param!!.thisObject as LinearLayout
@@ -486,7 +554,8 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
 
             val tips = listOf(
                 "点击聊天界面下方泡泡消息按钮调出菜单",
-                "长按聊天界面下方红包按钮调出菜单"
+                "长按聊天界面下方红包按钮调出菜单",
+                "将泡泡消息图标替换为 BlackShell Mod 图标，点击调出菜单"
             )
             val currentIndex = ConfigManager.dGetInt(Constants.PrekCfgXXX + "bottom_shortcut_menu_mode", 0)
 
@@ -496,7 +565,7 @@ class BottomShortcutMenu : BaseClickableFunctionHookItem() {
                 setPadding(0, 16, 0, 0)
             }
             val dropdown = AutoCompleteTextView(fixContext).apply {
-                val options = listOf("泡泡消息", "红包")
+                val options = listOf("泡泡消息", "红包", "泡泡消息（图标）")
                 isFocusable = false
                 isCursorVisible = false
                 isLongClickable = false
